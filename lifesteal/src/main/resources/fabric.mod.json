@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "lifesteal",
+  "version": "${version}",
+  "name": "LifeSteal",
+  "description": "När en spelare dödar en annan spelare flyttas ett hjärta från offret till mördaren.",
+  "authors": ["LifeSteal Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.lifesteal.LifeStealMod"]
+  },
+  "mixins": [
+    "lifesteal.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}
