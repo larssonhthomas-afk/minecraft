@@ -1,4 +1,5 @@
 - [Hem](Home)
+- [Changelog](Changelog)
 - **LifeSteal**
   - [Översikt](Lifesteal-Overview)
   - [Arkitektur](Lifesteal-Architecture)
