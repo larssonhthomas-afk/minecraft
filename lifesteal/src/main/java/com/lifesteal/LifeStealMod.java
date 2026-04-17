@@ -1,10 +1,12 @@
 package com.lifesteal;
 
 import com.lifesteal.command.LifeStealCommand;
+import com.lifesteal.config.LifeStealConfig;
 import com.lifesteal.logic.HeartManager;
 import com.lifesteal.persistence.HeartDataStore;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -39,7 +41,7 @@ public final class LifeStealMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        heartManager = HeartManager.createDefault();
+        heartManager = buildHeartManagerFromConfig();
         LOGGER.info("LifeSteal initierad: minHealth={}, maxHealth={}, heartsToSteal={}",
                 heartManager.getMinHealth(),
                 heartManager.getMaxHealth(),
@@ -51,6 +53,26 @@ public final class LifeStealMod implements ModInitializer {
                 (handler, sender, server) -> applyStoredMaxHealth(handler.player));
         CommandRegistrationCallback.EVENT.register(
                 (dispatcher, registryAccess, env) -> LifeStealCommand.register(dispatcher));
+    }
+
+    private static HeartManager buildHeartManagerFromConfig() {
+        Path configPath = FabricLoader.getInstance().getConfigDir().resolve(MOD_ID + ".json");
+        LifeStealConfig config;
+        try {
+            config = LifeStealConfig.loadOrCreate(configPath);
+        } catch (Exception ex) {
+            LOGGER.error("Kunde inte läsa {} — använder default-värden. Fel: {}",
+                    configPath, ex.getMessage());
+            config = LifeStealConfig.defaults();
+        }
+        try {
+            return new HeartManager(config.minHealth(), config.maxHealth(), config.heartsToSteal());
+        } catch (IllegalArgumentException ex) {
+            LOGGER.error("Ogiltig config i {} ({}) — använder default-värden",
+                    configPath, ex.getMessage());
+            LifeStealConfig defaults = LifeStealConfig.defaults();
+            return new HeartManager(defaults.minHealth(), defaults.maxHealth(), defaults.heartsToSteal());
+        }
     }
 
     private void onServerStarted(MinecraftServer server) {
