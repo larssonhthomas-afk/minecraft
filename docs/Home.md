@@ -18,3 +18,7 @@ Fabric-mod som permanent överför hjärtan mellan spelare vid PvP-död.
 - Host: Hetzner CX23 (Ubuntu 22.04)
 - Minecraft: 1.21.4 med Fabric Loader 0.19.2
 - Java: 21 (OpenJDK)
+
+## Övrigt
+
+- [Changelog](Changelog) — alla noterbara ändringar per datum.
