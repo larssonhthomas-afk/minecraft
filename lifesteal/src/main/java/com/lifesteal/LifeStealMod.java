@@ -1,8 +1,10 @@
 package com.lifesteal;
 
+import com.lifesteal.command.LifeStealCommand;
 import com.lifesteal.logic.HeartManager;
 import com.lifesteal.persistence.HeartDataStore;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -47,6 +49,8 @@ public final class LifeStealMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStopping);
         ServerPlayConnectionEvents.JOIN.register(
                 (handler, sender, server) -> applyStoredMaxHealth(handler.player));
+        CommandRegistrationCallback.EVENT.register(
+                (dispatcher, registryAccess, env) -> LifeStealCommand.register(dispatcher));
     }
 
     private void onServerStarted(MinecraftServer server) {
