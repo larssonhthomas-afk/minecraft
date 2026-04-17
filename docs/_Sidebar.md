@@ -1,6 +1,6 @@
 - [Hem](Home)
 - **LifeSteal**
-  - [Översikt](lifesteal/overview)
-  - [Arkitektur](lifesteal/architecture)
-  - [Testning](lifesteal/testing)
-  - [Deployment](lifesteal/deployment)
+  - [Översikt](Lifesteal-Overview)
+  - [Arkitektur](Lifesteal-Architecture)
+  - [Testning](Lifesteal-Testing)
+  - [Deployment](Lifesteal-Deployment)
