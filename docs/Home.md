@@ -8,10 +8,10 @@ Welcome till wikin för vår privata Minecraft-server. Allt innehåll speglas au
 
 Fabric-mod som permanent överför hjärtan mellan spelare vid PvP-död.
 
-- [Översikt](lifesteal/overview)
-- [Arkitektur](lifesteal/architecture)
-- [Testning](lifesteal/testing)
-- [Deployment](lifesteal/deployment)
+- [Översikt](Lifesteal-Overview)
+- [Arkitektur](Lifesteal-Architecture)
+- [Testning](Lifesteal-Testing)
+- [Deployment](Lifesteal-Deployment)
 
 ## Infrastruktur
 
