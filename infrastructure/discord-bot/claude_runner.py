@@ -93,6 +93,24 @@ def generate_mod_names(description: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Mod directory lookup
+# ---------------------------------------------------------------------------
+
+def _find_mod_dir(modname: str) -> Path | None:
+    """Find a mod source directory by exact or partial name match."""
+    mods_path = Path(MODS_SOURCE_DIR)
+    # Exact match first
+    exact = mods_path / modname
+    if exact.is_dir() and (exact / "src").exists():
+        return exact
+    # Partial match (case-insensitive)
+    for d in sorted(mods_path.iterdir()):
+        if d.is_dir() and (d / "src").exists() and modname.lower() in d.name.lower():
+            return d
+    return None
+
+
+# ---------------------------------------------------------------------------
 # !create — two-phase: analysis then build
 # ---------------------------------------------------------------------------
 
@@ -272,6 +290,151 @@ Output EXACTLY one of these lines as the very last line:
 
 
 # ---------------------------------------------------------------------------
+# !change — two-phase: analysis then modify
+# ---------------------------------------------------------------------------
+
+async def analyze_change_request(modname: str, description: str) -> dict:
+    """
+    Phase 1 of !change: find the mod and plan the changes.
+
+    Returns dict:
+      found    — bool
+      mod_dir  — str | None
+      questions — list[str]  (plan summary + optional clarifier + "build?")
+    """
+    mod_dir = _find_mod_dir(modname)
+    if mod_dir is None:
+        return {"found": False, "mod_dir": None, "questions": []}
+
+    prompt = f"""You are analyzing a request to modify an existing Minecraft Fabric mod.
+
+Mod directory: {mod_dir}
+Change request: {description}
+
+Tasks:
+1. Read the existing source files under {mod_dir}/src/
+2. Create a brief plan (2-5 bullet points) describing exactly what will change.
+3. Add up to 1 clarifying question if something is ambiguous.
+4. ALWAYS append "build?" as the very last question.
+
+Output ONLY valid JSON — no markdown, no prose, no code fences:
+{{
+  "questions": ["Plan:\n• Bullet 1\n• Bullet 2\nNågot att ändra?", "build?"]
+}}
+
+Rules:
+- The first question is ALWAYS the plan summary.
+- "build?" is ALWAYS the last question, never omitted.
+- Max 3 questions total (plan + up to 1 clarifier + build?).
+"""
+    stdout, _stderr, _rc = await _run_claude(prompt, timeout=120)
+    json_match = re.search(r"\{.*\}", stdout, re.DOTALL)
+    if json_match:
+        try:
+            data = json.loads(json_match.group())
+            return {
+                "found": True,
+                "mod_dir": str(mod_dir),
+                "questions": list(data.get("questions", []))[:3],
+            }
+        except (json.JSONDecodeError, KeyError):
+            pass
+    return {"found": True, "mod_dir": str(mod_dir), "questions": ["build?"]}
+
+
+async def change_mod(
+    modname: str,
+    mod_dir: str,
+    description: str,
+    discord_user: str,
+    questions: list[str],
+    answers: list[str],
+    progress_cb=None,
+) -> str:
+    """
+    Phase 2 of !change: apply changes, rebuild, redeploy.
+
+    progress_cb — optional async callable(str) for streaming progress messages.
+    Returns a human-readable result string.
+    """
+    async def progress(msg: str):
+        if progress_cb:
+            await progress_cb(msg)
+
+    await progress(f"Modifying mod `{modname}` — this takes a few minutes.")
+
+    qa_section = ""
+    if questions and answers:
+        pairs = [f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)]
+        qa_section = "\n\n## Clarifications from the user\n" + "\n\n".join(pairs)
+
+    prompt = f"""You are modifying an existing Minecraft Fabric 1.21.4 mod.
+
+## Mod to modify
+Directory: {mod_dir}
+
+## Change request
+{description}{qa_section}
+
+## Instructions
+1. Read ALL existing source files in {mod_dir}/src/ to understand the current implementation.
+2. Make the requested changes while preserving the existing architecture:
+   - Pure logic stays in logic/* (no Minecraft imports)
+   - Thin Mixin wrappers stay in mixin/*
+   - Update or add JUnit 5 tests for any changed logic
+3. Run: cd {mod_dir} && ./gradlew test
+4. If tests FAIL: read the error output, fix the code, run again. Repeat up to 5 times total.
+5. If tests still fail after 5 attempts: stop and output FAILURE.
+6. If tests PASS: run ./gradlew build
+7. Copy the built jar: cp {mod_dir}/build/libs/{modname}-*.jar {SERVER_MODS_DIR}/
+
+## Final output (REQUIRED — last line of your response, nothing after it)
+Output EXACTLY one of these lines:
+  SUCCESS: {modname}
+  FAILURE: <clear explanation of what failed>
+"""
+
+    await progress("Claude is applying changes and running tests...")
+    stdout, _stderr, _rc = await _run_claude(prompt, cwd=REPO_DIR, timeout=1200)
+
+    last_lines = stdout.strip().split("\n")[-5:]
+    status_line = next(
+        (l for l in reversed(last_lines) if l.startswith("SUCCESS:") or l.startswith("FAILURE:")),
+        None,
+    )
+
+    if status_line and status_line.startswith("SUCCESS:"):
+        await progress("Tests passed — creating git checkpoint...")
+        git_msg = f"Checkpoint: {modname} changed by {discord_user}"
+        _out, git_err, git_rc = await _run_shell(
+            f'git add -A && git commit -m "{git_msg}"',
+            cwd=REPO_DIR,
+        )
+        if git_rc != 0:
+            await progress(f"Warning: git commit failed — {git_err.strip()[:200]}")
+        else:
+            await progress("Pushing to GitHub...")
+            _out, push_err, push_rc = await _run_shell("git push", cwd=REPO_DIR)
+            if push_rc != 0:
+                await progress(f"Warning: git push failed — {push_err.strip()[:200]}")
+        return (
+            f"Mod **{modname}** uppdaterad!\n"
+            f"Servern behöver startas om för att ladda ändringarna.\n"
+            f"Git checkpoint skapad och pushad: _{git_msg}_"
+        )
+
+    if status_line and status_line.startswith("FAILURE:"):
+        reason = status_line[len("FAILURE:"):].strip()
+        return f"Kunde inte ändra **{modname}** efter upp till 5 försök.\n\n**Anledning:** {reason}"
+
+    tail = "\n".join(last_lines)
+    return (
+        f"Ändring av **{modname}** slutade med oväntat resultat.\n"
+        f"Sista output:\n```\n{tail}\n```"
+    )
+
+
+# ---------------------------------------------------------------------------
 # !list
 # ---------------------------------------------------------------------------
 
@@ -336,7 +499,7 @@ async def activate_mod(modname: str) -> str:
 # ---------------------------------------------------------------------------
 
 async def restore_commit(commit_hash: str) -> str:
-    """Hard-reset the repo to a specific git commit (saves a checkpoint first)."""
+    """Hard-reset the repo and redeploy server state from that commit."""
     if not re.fullmatch(r"[0-9a-fA-F]{4,40}", commit_hash):
         return f"Invalid commit hash: `{commit_hash}`"
 
@@ -346,13 +509,52 @@ async def restore_commit(commit_hash: str) -> str:
         cwd=REPO_DIR,
     )
 
+    # Reset repo
     stdout, stderr, rc = await _run_shell(
         f"git reset --hard {commit_hash}", cwd=REPO_DIR
     )
     if rc != 0:
         return f"Restore failed:\n```\n{stderr[:500]}\n```"
 
-    return f"Repo restored to `{commit_hash}`.\n```\n{stdout.strip()}\n```"
+    # Rebuild and redeploy all mods from restored source
+    results = []
+    mods_path = Path(MODS_SOURCE_DIR)
+    for mod_dir in sorted(mods_path.iterdir()):
+        if not mod_dir.is_dir() or mod_dir.name == "external" or not (mod_dir / "build.gradle").exists():
+            continue
+        build_out, build_err, build_rc = await _run_shell(
+            "./gradlew build -x test", cwd=str(mod_dir), timeout=300
+        )
+        if build_rc != 0:
+            results.append(f"❌ {mod_dir.name}: build failed")
+            continue
+        jars = list((mod_dir / "build" / "libs").glob("*.jar"))
+        jars = [j for j in jars if "sources" not in j.name and "dev" not in j.name]
+        if not jars:
+            results.append(f"⚠️ {mod_dir.name}: no jar found after build")
+            continue
+        # Clear old jars for this mod, deploy fresh one
+        for old in Path(SERVER_MODS_DIR).glob(f"{mod_dir.name}*.jar"):
+            old.unlink(missing_ok=True)
+        shutil.copy(str(jars[0]), SERVER_MODS_DIR)
+        results.append(f"✅ {mod_dir.name}")
+
+    # Sync server configs
+    for cfg in ["server.properties", "ops.json", "whitelist.json", "eula.txt"]:
+        src = Path(REPO_DIR) / "server" / cfg
+        dst = Path(SERVER_DIR) / cfg
+        if src.exists():
+            shutil.copy(str(src), str(dst))
+
+    # Restart server to load restored mods
+    await _run_shell("sudo systemctl restart minecraft")
+
+    mods_summary = ", ".join(results) if results else "inga mods"
+    return (
+        f"Repo återställt till `{commit_hash}`.\n"
+        f"Mods ombyggda och deployade: {mods_summary}\n"
+        f"Server omstartad — bör vara uppe om ~30 s."
+    )
 
 
 # ---------------------------------------------------------------------------
