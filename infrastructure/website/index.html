@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ranked SMP · Launch Countdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #161616;
+    --bg-1: #1f1f20;
+    --bg-2: #2a2a2c;
+    --line: #3a3a3d;
+    --ink: #f3ece0;
+    --ink-dim: #9a948a;
+    --orange: #f07a1f;
+    --orange-hi: #ffa04a;
+    --orange-lo: #b9530b;
+    --orange-shadow: #5a2605;
+    --danger: #e23b2b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-0);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    overflow: hidden;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle pixel grid background, inspired by Minecraft block faces */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
+      radial-gradient(ellipse at 50% 30%, rgba(240,122,31,0.10), transparent 55%),
+      radial-gradient(ellipse at 50% 100%, rgba(240,122,31,0.06), transparent 60%);
+    background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Floating pixel ember particles */
+  .embers {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .ember {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--orange);
+    box-shadow: 0 0 6px rgba(240,122,31,0.6);
+    animation: rise linear infinite;
+    opacity: 0;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 0.9; }
+    90%  { opacity: 0.7; }
+    100% { transform: translateY(-110vh) translateX(var(--drift, 20px)); opacity: 0; }
+  }
+
+  .stage {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 28px clamp(20px, 4vw, 60px);
+    gap: 24px;
+  }
+
+  /* ── Top bar ───────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-mark {
+    width: 44px;
+    height: 44px;
+    background: url('assets/ranked-smp-logo.png') center/cover no-repeat;
+    image-rendering: pixelated;
+    border: 2px solid var(--orange);
+    box-shadow:
+      0 0 0 2px #000,
+      0 0 22px rgba(240,122,31,0.35);
+  }
+  .brand-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+  .brand-text small {
+    display: block;
+    font-size: 9px;
+    color: var(--orange);
+    margin-top: 6px;
+    letter-spacing: 0.15em;
+  }
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    letter-spacing: 0.1em;
+    padding: 10px 14px;
+    background: var(--bg-1);
+    border: 2px solid var(--line);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.4);
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    background: var(--orange);
+    box-shadow: 0 0 10px var(--orange);
+    animation: blink 1.2s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ── Main ───────────────────────────────────────────────── */
+  .main {
+    display: grid;
+    grid-template-columns: minmax(280px, 420px) 1fr;
+    align-items: center;
+    gap: clamp(24px, 5vw, 80px);
+  }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; text-align: center; }
+    .hero { justify-self: center; }
+  }
+
+  /* Hero logo with pixel frame */
+  .hero {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1 / 1;
+  }
+  .hero-frame {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    border: 3px solid var(--orange);
+    box-shadow:
+      0 0 0 3px #000,
+      0 0 0 6px var(--orange-lo),
+      0 0 60px rgba(240,122,31,0.35),
+      inset 0 0 0 3px #000;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--orange-lo), 0 0 40px rgba(240,122,31,0.3), inset 0 0 0 3px #000; }
+    50%      { box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--orange-lo), 0 0 80px rgba(240,122,31,0.55), inset 0 0 0 3px #000; }
+  }
+  .hero-img {
+    position: absolute;
+    inset: 6px;
+    background: url('assets/ranked-smp-logo.png') center/cover no-repeat #2a2a2c;
+    image-rendering: pixelated;
+  }
+  .hero-corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: var(--orange);
+    box-shadow: 0 0 0 3px #000;
+    z-index: 2;
+  }
+  .hero-corner.tl { top: -4px; left: -4px; }
+  .hero-corner.tr { top: -4px; right: -4px; }
+  .hero-corner.bl { bottom: -4px; left: -4px; }
+  .hero-corner.br { bottom: -4px; right: -4px; }
+
+  /* Right column: title + countdown */
+  .content {
+    min-width: 0;
+  }
+  .eyebrow {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--orange);
+    margin-bottom: 18px;
+  }
+  .eyebrow::before { content: "▶  "; color: var(--orange-hi); }
+  .title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(22px, 3.4vw, 44px);
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    text-shadow:
+      3px 3px 0 #000,
+      6px 6px 0 var(--orange-shadow);
+    margin-bottom: 14px;
+  }
+  .title .orange { color: var(--orange); }
+  .subtitle {
+    font-family: 'VT323', monospace;
+    font-size: clamp(20px, 2.2vw, 28px);
+    line-height: 1.3;
+    color: var(--ink-dim);
+    margin-bottom: 34px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Countdown grid */
+  .countdown {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(8px, 1.2vw, 16px);
+    max-width: 720px;
+  }
+  .unit {
+    position: relative;
+    background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+    border: 3px solid var(--line);
+    padding: clamp(14px, 1.8vw, 22px) 6px clamp(10px, 1.4vw, 14px);
+    text-align: center;
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,0.04),
+      inset 0 -5px 0 rgba(0,0,0,0.5),
+      0 6px 0 #000;
+  }
+  .unit::before {
+    content: "";
+    position: absolute;
+    top: 6px; left: 6px; right: 6px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(240,122,31,0.4), transparent);
+  }
+  .unit-value {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(28px, 4.6vw, 60px);
+    color: var(--orange);
+    text-shadow:
+      0 0 0 #000,
+      3px 3px 0 var(--orange-shadow),
+      0 0 18px rgba(240,122,31,0.4);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    display: block;
+    margin-bottom: 12px;
+    transition: transform 120ms ease-out;
+  }
+  .unit.tick .unit-value {
+    animation: tick 420ms ease-out;
+  }
+  @keyframes tick {
+    0%   { transform: translateY(-6px); color: var(--orange-hi); }
+    100% { transform: translateY(0); color: var(--orange); }
+  }
+  .unit-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(8px, 0.9vw, 11px);
+    letter-spacing: 0.2em;
+    color: var(--ink-dim);
+  }
+
+  /* Progress bar — an XP/health bar */
+  .progress-wrap {
+    margin-top: 28px;
+    max-width: 720px;
+  }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--ink-dim);
+  }
+  .progress-meta .pct { color: var(--orange); }
+  .progress {
+    height: 18px;
+    background: #000;
+    border: 2px solid var(--line);
+    padding: 2px;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        var(--orange) 0 8px,
+        var(--orange-hi) 8px 16px
+      );
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.35), 0 0 12px rgba(240,122,31,0.5);
+    transition: width 600ms ease;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    border-top: 2px dashed var(--line);
+    padding-top: 18px;
+  }
+  .footer .target {
+    color: var(--ink);
+  }
+  .footer .target b {
+    color: var(--orange);
+    font-weight: 800;
+  }
+  .footer .tz {
+    letter-spacing: 0.1em;
+  }
+
+  /* Launched state */
+  .launched .title { animation: shake 500ms steps(4) 2; }
+  @keyframes shake {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(-4px); }
+    50%  { transform: translateX(4px); }
+    75%  { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
+  }
+  .launched .unit-value { color: var(--danger); text-shadow: 3px 3px 0 #3a0a06, 0 0 24px rgba(226,59,43,0.6); }
+
+  /* Scanlines over everything, very faint */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.0) 0 2px,
+      rgba(0,0,0,0.12) 2px 3px
+    );
+    mix-blend-mode: multiply;
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+  <div class="embers" id="embers"></div>
+
+  <div class="stage" id="stage">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div class="brand-text">
+          RANKED · SMP
+          <small>SEASON 01</small>
+        </div>
+      </div>
+      <div class="status">
+        <span class="dot"></span>
+        <span>SERVERS WARMING UP</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="hero">
+        <div class="hero-frame"></div>
+        <div class="hero-img"></div>
+        <span class="hero-corner tl"></span>
+        <span class="hero-corner tr"></span>
+        <span class="hero-corner bl"></span>
+        <span class="hero-corner br"></span>
+      </div>
+
+      <section class="content">
+        <div class="eyebrow">INCOMING · T-MINUS</div>
+        <h1 class="title">
+          LAUNCH FOR<br>
+          <span class="orange">RANKED SMP</span><br>
+          EPIC BATTLE.
+        </h1>
+        <p class="subtitle">
+          The gates open May 13, 2026 at 20:00 Swedish time.<br>
+          Sharpen your sword. Stock the ender chest. Queue up.
+        </p>
+
+        <div class="countdown" id="countdown" aria-live="polite">
+          <div class="unit" data-unit="days">
+            <span class="unit-value" id="v-days">00</span>
+            <span class="unit-label">DAYS</span>
+          </div>
+          <div class="unit" data-unit="hours">
+            <span class="unit-value" id="v-hours">00</span>
+            <span class="unit-label">HOURS</span>
+          </div>
+          <div class="unit" data-unit="mins">
+            <span class="unit-value" id="v-mins">00</span>
+            <span class="unit-label">MINUTES</span>
+          </div>
+          <div class="unit" data-unit="secs">
+            <span class="unit-value" id="v-secs">00</span>
+            <span class="unit-label">SECONDS</span>
+          </div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-meta">
+            <span>LOADING WORLD</span>
+            <span class="pct" id="pct">0%</span>
+          </div>
+          <div class="progress"><div class="progress-fill" id="fill"></div></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="target">
+        TARGET &nbsp;·&nbsp; <b>2026-05-13 &nbsp;20:00</b> &nbsp;Europe/Stockholm
+      </div>
+      <div class="tz" id="localtz">—</div>
+    </footer>
+  </div>
+
+  <div class="scanlines" aria-hidden="true"></div>
+
+<script>
+  // Target: 2026-05-13 20:00 Europe/Stockholm (CEST = UTC+2) => 18:00 UTC
+  const TARGET_MS = Date.UTC(2026, 4, 13, 18, 0, 0);
+
+  const START_KEY = 'ranked-smp-countdown-start';
+  let startMs = Number(localStorage.getItem(START_KEY));
+  if (!startMs || isNaN(startMs) || startMs >= TARGET_MS) {
+    startMs = Date.now();
+    localStorage.setItem(START_KEY, String(startMs));
+  }
+
+  const els = {
+    days:  document.getElementById('v-days'),
+    hours: document.getElementById('v-hours'),
+    mins:  document.getElementById('v-mins'),
+    secs:  document.getElementById('v-secs'),
+    fill:  document.getElementById('fill'),
+    pct:   document.getElementById('pct'),
+    stage: document.getElementById('stage'),
+    units: {
+      days:  document.querySelector('[data-unit="days"]'),
+      hours: document.querySelector('[data-unit="hours"]'),
+      mins:  document.querySelector('[data-unit="mins"]'),
+      secs:  document.querySelector('[data-unit="secs"]'),
+    },
+    localtz: document.getElementById('localtz'),
+  };
+
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'LOCAL';
+    const localStr = new Date(TARGET_MS).toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+    els.localtz.textContent = `YOUR TIME · ${localStr} (${tz})`;
+  } catch (e) {
+    els.localtz.textContent = '';
+  }
+
+  const prev = { days: null, hours: null, mins: null, secs: null };
+
+  function pad(n) { return String(Math.max(0, n)).padStart(2, '0'); }
+
+  function render() {
+    const now = Date.now();
+    const diff = TARGET_MS - now;
+
+    if (diff <= 0) {
+      els.days.textContent = '00';
+      els.hours.textContent = '00';
+      els.mins.textContent = '00';
+      els.secs.textContent = '00';
+      els.fill.style.width = '100%';
+      els.pct.textContent = '100%';
+      document.body.classList.add('launched');
+      const eyebrow = document.querySelector('.eyebrow');
+      if (eyebrow) eyebrow.textContent = '▶  LIVE NOW · GG';
+      return;
+    }
+
+    const SEC = 1000, MIN = 60*SEC, HR = 60*MIN, DAY = 24*HR;
+    const d = Math.floor(diff / DAY);
+    const h = Math.floor((diff % DAY) / HR);
+    const m = Math.floor((diff % HR) / MIN);
+    const s = Math.floor((diff % MIN) / SEC);
+
+    const vals = { days: d, hours: h, mins: m, secs: s };
+    const strs = {
+      days:  d > 99 ? String(d) : pad(d),
+      hours: pad(h),
+      mins:  pad(m),
+      secs:  pad(s),
+    };
+
+    for (const k of ['days','hours','mins','secs']) {
+      if (prev[k] !== vals[k]) {
+        els[k].textContent = strs[k];
+        const u = els.units[k];
+        u.classList.remove('tick');
+        void u.offsetWidth;
+        u.classList.add('tick');
+        prev[k] = vals[k];
+      }
+    }
+
+    const total = TARGET_MS - startMs;
+    const done = Math.min(1, Math.max(0, (now - startMs) / total));
+    const pct = (done * 100).toFixed(1);
+    els.fill.style.width = pct + '%';
+    els.pct.textContent = pct + '%';
+  }
+
+  render();
+  setInterval(render, 250);
+
+  // Ember particles
+  const emberRoot = document.getElementById('embers');
+  const EMBER_COUNT = 22;
+  for (let i = 0; i < EMBER_COUNT; i++) {
+    const e = document.createElement('div');
+    e.className = 'ember';
+    const size = 2 + Math.random() * 4;
+    e.style.width = size + 'px';
+    e.style.height = size + 'px';
+    e.style.left = Math.random() * 100 + 'vw';
+    e.style.bottom = (-10 - Math.random() * 20) + 'px';
+    e.style.animationDuration = (8 + Math.random() * 10) + 's';
+    e.style.animationDelay = (-Math.random() * 12) + 's';
+    e.style.setProperty('--drift', (Math.random() * 60 - 30) + 'px');
+    e.style.opacity = String(0.4 + Math.random() * 0.5);
+    e.style.background = Math.random() < 0.3 ? '#ffa04a' : '#f07a1f';
+    emberRoot.appendChild(e);
+  }
+</script>
+</body>
+</html>
