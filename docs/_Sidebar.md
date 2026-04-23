@@ -5,3 +5,5 @@
   - [Arkitektur](Lifesteal-Architecture)
   - [Testning](Lifesteal-Testing)
   - [Deployment](Lifesteal-Deployment)
+- **Infrastruktur**
+  - [Discord-bot](Discord-Bot)
