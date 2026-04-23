@@ -1,0 +1,9 @@
+logs/
+libraries/
+versions/
+usercache.json
+banned-ips.json
+banned-players.json
+crafty_managed.txt
+*.log
+*.gz

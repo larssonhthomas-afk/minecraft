@@ -115,21 +115,23 @@ User's mod request: {description}
 Tasks:
 1. List all subdirectories in {MODS_SOURCE_DIR}/ (ignore the 'external' folder).
 2. Check if any existing mod is functionally similar to what the user described.
-3. Generate up to 3 clarifying questions ONLY IF the mod's core game mechanic is ambiguous
-   (e.g. unclear trigger events, unclear scope, mutually exclusive interpretations).
-   Do NOT ask if the description is already clear enough to implement.
+3. Generate a brief implementation plan (2-5 bullet points) summarising what the mod will do.
+4. Add up to 2 clarifying questions IF anything is ambiguous or has multiple valid interpretations.
+5. ALWAYS append "build?" as the very last question so the user can confirm the plan before building starts.
 
 Output ONLY valid JSON — no markdown, no prose, no code fences:
 {{
-  "has_similar": true,
-  "similar_mod_name": "lifesteal",
-  "questions": ["Question 1?", "Question 2?"]
+  "has_similar": false,
+  "similar_mod_name": null,
+  "questions": ["Plan:\n• Bullet 1\n• Bullet 2\n• Bullet 3\nNågot att ändra?", "build?"]
 }}
 
 Rules:
 - "has_similar" is true only when an existing mod implements the SAME core mechanic.
 - "similar_mod_name" is null when has_similar is false.
-- "questions" is [] when no clarification is needed.
+- The first question is ALWAYS the plan summary — format it as "Plan:\n• ...\nNågot att ändra?".
+- "build?" is ALWAYS the last question, never omitted.
+- Max 3 questions total (plan + up to 1 clarifier + build?).
 """
     stdout, _stderr, _rc = await _run_claude(prompt, timeout=120)
 

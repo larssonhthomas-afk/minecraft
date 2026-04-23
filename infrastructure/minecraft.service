@@ -1,0 +1,19 @@
+[Unit]
+Description=Minecraft Fabric Server
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+User=crafty
+Group=crafty
+WorkingDirectory=/var/opt/minecraft/server
+ExecStart=/usr/bin/java -Xms1000M -Xmx2000M -jar fabric-server-launcher.jar nogui
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=minecraft
+
+[Install]
+WantedBy=multi-user.target

@@ -172,7 +172,20 @@ async def _handle_session_reply(message: discord.Message):
             await thread.send("Please reply **yes** or **no**.")
 
     elif state == "PENDING_CLARIFICATIONS":
-        session["answers"].append(message.content.strip())
+        answer = message.content.strip()
+        current_q = session["questions"][len(session["answers"])]
+        session["answers"].append(answer)
+
+        # "build?" is a confirm gate — cancel on negative reply
+        if current_q.strip().lower() == "build?":
+            if answer.lower() in ("no", "n", "nej", "nope", "cancel", "avbryt"):
+                await thread.send("Bygge avbrutet. Ändra beskrivningen och kör `!create` igen.")
+                active_sessions.pop(thread.id, None)
+                return
+            # Any other reply (ja, yes, build, ok…) → start
+            await _start_build(thread, session)
+            return
+
         remaining = session["questions"][len(session["answers"]):]
         if remaining:
             idx = len(session["answers"])
