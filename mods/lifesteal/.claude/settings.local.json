@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java -version)",
+      "Bash(javac -version)",
+      "Bash(apt list *)",
+      "Read(//usr/lib/jvm/**)",
+      "Bash(dpkg -l)",
+      "Bash(apt-get install *)",
+      "Bash(curl -s \"https://meta.fabricmc.net/v2/versions/yarn/1.21.4\")",
+      "Bash(curl -s \"https://meta.fabricmc.net/v2/versions/loader/1.21.4\")",
+      "Bash(curl *)",
+      "WebFetch(domain:maven.fabricmc.net)",
+      "Bash(mkdir -p /tmp/yarn-check)",
+      "Read(//tmp/**)",
+      "Bash(unzip -o -q yarn.jar)",
+      "Bash(ls mappings/)",
+      "Bash(python3 -c \"import zipfile; z = zipfile.ZipFile\\('yarn.jar'\\); z.extractall\\('.'\\); print\\([n for n in z.namelist\\(\\) if 'mappings' in n]\\)\")",
+      "Bash(awk 'NR==57271,NR==57320' /tmp/yarn-check/mappings/mappings.tiny)",
+      "Bash(awk 'NR==116140,NR==116180' /tmp/yarn-check/mappings/mappings.tiny)",
+      "Bash(awk 'NR==34835,NR==35100' /tmp/yarn-check/mappings/mappings.tiny)",
+      "Bash(awk '/^c\\\\tare\\\\tnet\\\\/minecraft\\\\/class_3222/,/^c\\\\t/' /tmp/yarn-check/mappings/mappings.tiny)",
+      "Bash(awk NR>=55580 && NR<=55595 *)",
+      "Bash(awk NR>=163515 && NR<=163530 *)",
+      "Bash(mkdir -p /tmp/ls-build/classes /tmp/ls-build/test-classes)",
+      "Bash(javac -d /tmp/ls-build/classes src/main/java/com/lifesteal/logic/HeartManager.java)",
+      "Bash(javac -cp /tmp/ls-build/classes:/tmp/junit-cache/junit-platform-console-standalone-1.10.2.jar -d /tmp/ls-build/test-classes src/test/java/com/lifesteal/logic/HeartManagerTest.java)",
+      "Bash(java -jar /tmp/junit-cache/junit-platform-console-standalone-1.10.2.jar execute --class-path /tmp/ls-build/classes:/tmp/ls-build/test-classes --select-class com.lifesteal.logic.HeartManagerTest)",
+      "Bash(unzip -q -o gradle-8.12-bin.zip -d /tmp/gradle-dist)",
+      "Bash(/tmp/gradle-dist/gradle-8.12/bin/gradle --version)"
+    ]
+  }
+}

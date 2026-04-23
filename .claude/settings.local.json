@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh label *)",
+      "Bash(gh issue *)",
+      "Bash(git -C /opt/minecraft-dev/minecraft status)",
+      "Bash(./gradlew test *)",
+      "Bash(git commit *)",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(git tag *)",
+      "Bash(git checkout *)",
+      "Bash(gh pr *)",
+      "Bash(git pull *)",
+      "Bash(gh run *)",
+      "Bash(git mv *)"
+    ]
+  }
+}

@@ -4,6 +4,12 @@ Alla noterbara ändringar i det här repot dokumenteras här.
 
 Format inspirerat av [Keep a Changelog](https://keepachangelog.com/). Datum är i ISO-format. Projektet har ännu ingen semantisk versionering — entries grupperas per dag.
 
+## 2026-04-23 (special_death_message)
+
+### Nytt
+
+- **special_death_message** (`mods/special_death_message/`) — Fabric-mod som ersätter dödsskärmsmeddelandet med "du doooggg". Byggt med samma logik/mixin-separation som lifesteal.
+
 ## 2026-04-23
 
 ### Nytt

@@ -5,5 +5,7 @@
   - [Arkitektur](Lifesteal-Architecture)
   - [Testning](Lifesteal-Testing)
   - [Deployment](Lifesteal-Deployment)
+- **Special Death Message**
+  - [Översikt](Special-Death-Message)
 - **Infrastruktur**
   - [Discord-bot](Discord-Bot)
