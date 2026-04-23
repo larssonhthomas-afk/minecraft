@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "MODNAME",
+  "version": "${version}",
+  "name": "MODNAME",
+  "description": "Replace with your mod description.",
+  "authors": ["MC Server"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.MODPACKAGE.MODCLASSMod"]
+  },
+  "mixins": [
+    "MODNAME.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

@@ -29,3 +29,4 @@ bin/
 # Environment secrets
 .env
 *.secret
+__pycache__
