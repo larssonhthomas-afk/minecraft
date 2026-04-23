@@ -4,6 +4,32 @@ Alla noterbara ändringar i det här repot dokumenteras här.
 
 Format inspirerat av [Keep a Changelog](https://keepachangelog.com/). Datum är i ISO-format. Projektet har ännu ingen semantisk versionering — entries grupperas per dag.
 
+## 2026-04-23
+
+### Nytt
+
+- **Discord-bot** (`infrastructure/discord-bot/`) för mod-hantering via Discord. Kommandon: `!create`, `!list`, `!remove`, `!activate`, `!restore`, `!history`, `!status`, `!restart`, `!help`. Svarar alltid i trådar. Stänger issue [#5](https://github.com/larssonhthomas-afk/minecraft/issues/5).
+- **`!create`-flöde:** Claude Code granskar liknande mods, ställer upp till 3 följdfrågor i tråden, bygger, kör tester (max 5 försök), skapar git-checkpoint och deployer jar automatiskt.
+- **`!restart`** startar om Minecraft-servern via Crafty Controller REST API.
+- **`!remove` / `!activate`** inaktiverar/aktiverar mods genom att flytta jar mellan `mods/` och `mods-disabled/` — ingenting raderas.
+- **28 enhetstester** för kommandoparsning och mod-namnsgenerering, alla gröna.
+- **Wiki-sida** för Discord-boten under Infrastruktur i sidebaren.
+
+### Infrastruktur
+
+- Discord-boten körs som `systemd`-tjänst (`discord-bot.service`) under `deploy`-användaren, startar automatiskt vid omstart.
+- `mods-disabled/`-mappen skapad på produktionsservern.
+- Git-ägarskap ändrat till `deploy`-användaren för att möjliggöra commits direkt från boten.
+
+### Regler
+
+- **Wiki-regel** tillagd i `CLAUDE.md`: dokumentation i `docs/` ska uppdateras i samma commit som ny kod.
+
+### Lösta begränsningar (från 2026-04-17)
+
+- ~~Ingen Discord-bot~~ — löst med `!create`-flödet ovan.
+- ~~Ingen rollback-automatik~~ — löst med `!restore <commit-hash>`.
+
 ## 2026-04-17
 
 ### Nytt
