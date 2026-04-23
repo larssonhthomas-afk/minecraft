@@ -4,6 +4,12 @@ Alla noterbara ändringar i det här repot dokumenteras här.
 
 Format inspirerat av [Keep a Changelog](https://keepachangelog.com/). Datum är i ISO-format. Projektet har ännu ingen semantisk versionering — entries grupperas per dag.
 
+## 2026-04-23 (bot-förbättring)
+
+### Förbättrat
+
+- **Discord-bot:** `!create` pushar nu automatiskt till GitHub efter checkpoint-commit — ingen manuell `git push` behövs.
+
 ## 2026-04-23 (special_death_message)
 
 ### Nytt
