@@ -17,7 +17,7 @@ import logging
 import os
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 from claude_runner import (
@@ -56,6 +56,7 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 #   questions     : list[str]
 #   answers       : list[str]  (grows as user replies)
 active_sessions: dict[int, dict] = {}
+_server_was_online: bool | None = None  # None = unknown (first check not done yet)
 
 HELP_TEXT = """\
 **Minecraft Mod Bot — Commands**
@@ -87,11 +88,38 @@ async def get_or_create_thread(message: discord.Message, name: str) -> discord.T
         return message.channel  # fall back to channel
 
 
+# ── Server watchdog ──────────────────────────────────────────────────────────
+
+@tasks.loop(seconds=60)
+async def server_watchdog():
+    global _server_was_online
+    channel = bot.get_channel(CHANNEL_ID)
+    if channel is None:
+        return
+
+    is_online = "online" in await get_server_status()
+
+    if _server_was_online is None:
+        # First check — just record state, no notification
+        _server_was_online = is_online
+        return
+
+    if _server_was_online and not is_online:
+        log.warning("Server went offline — notifying Discord")
+        await channel.send("🔴 **Minecraft-servern är nere!** Kolla Crafty eller kör `!restart`.")
+    elif not _server_was_online and is_online:
+        log.info("Server came back online — notifying Discord")
+        await channel.send("🟢 **Minecraft-servern är tillbaka online!**")
+
+    _server_was_online = is_online
+
+
 # ── Event: on_ready ──────────────────────────────────────────────────────────
 
 @bot.event
 async def on_ready():
     log.info("Logged in as %s (id=%s)", bot.user, bot.user.id)
+    server_watchdog.start()
 
 
 # ── Event: on_message ────────────────────────────────────────────────────────
