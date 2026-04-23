@@ -23,6 +23,8 @@ from dotenv import load_dotenv
 from claude_runner import (
     analyze_mod_request,
     build_mod,
+    analyze_change_request,
+    change_mod,
     list_mods,
     remove_mod,
     activate_mod,
@@ -63,10 +65,13 @@ HELP_TEXT = """\
 **Minecraft Mod Bot — Commands**
 
 `!create <description>` — Skapa en ny mod. Claude granskar, ställer följdfrågor, bygger, testar och deployer.
+`!change <modnamn> <description>` — Ändra en befintlig mod. Samma flow som !create.
 `!list` — Visa aktiva och inaktiverade mods.
 `!remove <modnamn>` — Inaktivera en mod (flyttar jar till mods-disabled/).
 `!activate <modnamn>` — Aktivera en inaktiverad mod.
-`!restore <commit-hash>` — Återställ repot till en specifik Git-version.
+`!restore <hash>` — Återställ allt (repo + mods + server) till en commit.
+`!restore server <hash>` — Återställ bara server-configs.
+`!restore <modnamn> <hash>` — Återställ bara en specifik mod.
 `!history` — Visa de 10 senaste Git-commits med hash.
 `!server` — Visa serverstatus, RAM, disk och aktiva spelare.
 `!restart` — Starta om Minecraft-servern.
@@ -220,13 +225,24 @@ async def _run_build_task(thread: discord.Thread, session: dict):
         progress_messages.append(msg)
         await thread.send(msg[:2000])
 
-    build_coro = build_mod(
-        description=session["description"],
-        discord_user=session["discord_user"],
-        questions=session["questions"],
-        answers=session["answers"],
-        progress_cb=progress_cb,
-    )
+    if session.get("kind") == "change":
+        build_coro = change_mod(
+            modname=session["modname"],
+            mod_dir=session["mod_dir"],
+            description=session["description"],
+            discord_user=session["discord_user"],
+            questions=session["questions"],
+            answers=session["answers"],
+            progress_cb=progress_cb,
+        )
+    else:
+        build_coro = build_mod(
+            description=session["description"],
+            discord_user=session["discord_user"],
+            questions=session["questions"],
+            answers=session["answers"],
+            progress_cb=progress_cb,
+        )
     build_task = asyncio.create_task(build_coro)
 
     try:
@@ -286,6 +302,48 @@ async def cmd_create(ctx: commands.Context, *, description: str = ""):
         await _start_build(thread, session)
 
 
+@bot.command(name="change")
+async def cmd_change(ctx: commands.Context, modname: str = "", *, description: str = ""):
+    if not modname.strip() or not description.strip():
+        thread = await get_or_create_thread(ctx.message, "!change — usage")
+        await thread.send("Usage: `!change <modnamn> <beskrivning av ändringen>`")
+        return
+
+    thread = await get_or_create_thread(ctx.message, f"change: {modname}")
+    await thread.send(f"Analyserar mod **{modname}**: *{description}*")
+
+    try:
+        analysis = await analyze_change_request(modname, description)
+    except Exception as exc:
+        await thread.send(f"Analysis failed: {exc}")
+        return
+
+    if not analysis["found"]:
+        await thread.send(
+            f"Ingen mod med namnet **{modname}** hittades i `mods/`.\n"
+            "Kolla tillgängliga mods med `!list`."
+        )
+        return
+
+    session: dict = {
+        "kind": "change",
+        "modname": modname,
+        "mod_dir": analysis["mod_dir"],
+        "description": description,
+        "discord_user": str(ctx.author),
+        "questions": analysis.get("questions", [])[:3],
+        "answers": [],
+        "state": "",
+    }
+    active_sessions[thread.id] = session
+
+    if session["questions"]:
+        await _ask_next_question(thread, session)
+    else:
+        session["state"] = "BUILDING"
+        await _start_build(thread, session)
+
+
 @bot.command(name="list")
 async def cmd_list(ctx: commands.Context):
     thread = await get_or_create_thread(ctx.message, "mod list")
@@ -320,14 +378,29 @@ async def cmd_activate(ctx: commands.Context, modname: str = ""):
 
 
 @bot.command(name="restore")
-async def cmd_restore(ctx: commands.Context, commit_hash: str = ""):
-    thread = await get_or_create_thread(ctx.message, f"restore: {commit_hash[:8]}")
-    if not commit_hash.strip():
-        await thread.send("Usage: `!restore <commit-hash>`  (get hashes with `!history`)")
+async def cmd_restore(ctx: commands.Context, first: str = "", second: str = ""):
+    # Formats:
+    #   !restore <hash>              → restore all
+    #   !restore server <hash>       → restore server configs only
+    #   !restore <modname> <hash>    → restore specific mod only
+    if not first:
+        await ctx.send(
+            "Usage:\n"
+            "`!restore <hash>` — allt\n"
+            "`!restore server <hash>` — bara server-configs\n"
+            "`!restore <modnamn> <hash>` — bara en mod"
+        )
         return
-    await thread.send(f"Restoring repo to `{commit_hash}`…")
+
+    if second:
+        target, commit_hash = first, second
+    else:
+        target, commit_hash = "all", first
+
+    thread = await get_or_create_thread(ctx.message, f"restore: {target} {commit_hash[:8]}")
+    await thread.send(f"Återställer `{target}` till `{commit_hash}`…")
     try:
-        await thread.send(await restore_commit(commit_hash))
+        await thread.send(await restore_commit(commit_hash, target=target))
     except Exception as exc:
         await thread.send(f"Error: {exc}")
 

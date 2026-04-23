@@ -498,63 +498,101 @@ async def activate_mod(modname: str) -> str:
 # !restore
 # ---------------------------------------------------------------------------
 
-async def restore_commit(commit_hash: str) -> str:
-    """Hard-reset the repo and redeploy server state from that commit."""
-    if not re.fullmatch(r"[0-9a-fA-F]{4,40}", commit_hash):
-        return f"Invalid commit hash: `{commit_hash}`"
-
-    # Save current state so nothing is lost.
-    await _run_shell(
-        f'git add -A && git commit -m "Checkpoint: before restore to {commit_hash}" --allow-empty',
-        cwd=REPO_DIR,
+async def _checkout_path(commit_hash: str, path: str) -> tuple[str, str, int]:
+    """Restore a specific path from a commit without touching the rest of the repo."""
+    return await _run_shell(
+        f"git checkout {commit_hash} -- {path}", cwd=REPO_DIR
     )
 
-    # Reset repo
-    stdout, stderr, rc = await _run_shell(
-        f"git reset --hard {commit_hash}", cwd=REPO_DIR
+
+async def _build_and_deploy_mod(mod_dir: Path) -> str:
+    """Build a mod from source and deploy its jar. Returns status line."""
+    build_out, build_err, build_rc = await _run_shell(
+        "./gradlew build -x test", cwd=str(mod_dir), timeout=300
     )
-    if rc != 0:
-        return f"Restore failed:\n```\n{stderr[:500]}\n```"
+    if build_rc != 0:
+        return f"❌ {mod_dir.name}: build misslyckades"
+    jars = [j for j in (mod_dir / "build" / "libs").glob("*.jar")
+            if "sources" not in j.name and "dev" not in j.name]
+    if not jars:
+        return f"⚠️ {mod_dir.name}: ingen jar hittades"
+    for old in Path(SERVER_MODS_DIR).glob(f"{mod_dir.name}*.jar"):
+        old.unlink(missing_ok=True)
+    shutil.copy(str(jars[0]), SERVER_MODS_DIR)
+    return f"✅ {mod_dir.name}"
 
-    # Rebuild and redeploy all mods from restored source
-    results = []
-    mods_path = Path(MODS_SOURCE_DIR)
-    for mod_dir in sorted(mods_path.iterdir()):
-        if not mod_dir.is_dir() or mod_dir.name == "external" or not (mod_dir / "build.gradle").exists():
-            continue
-        build_out, build_err, build_rc = await _run_shell(
-            "./gradlew build -x test", cwd=str(mod_dir), timeout=300
-        )
-        if build_rc != 0:
-            results.append(f"❌ {mod_dir.name}: build failed")
-            continue
-        jars = list((mod_dir / "build" / "libs").glob("*.jar"))
-        jars = [j for j in jars if "sources" not in j.name and "dev" not in j.name]
-        if not jars:
-            results.append(f"⚠️ {mod_dir.name}: no jar found after build")
-            continue
-        # Clear old jars for this mod, deploy fresh one
-        for old in Path(SERVER_MODS_DIR).glob(f"{mod_dir.name}*.jar"):
-            old.unlink(missing_ok=True)
-        shutil.copy(str(jars[0]), SERVER_MODS_DIR)
-        results.append(f"✅ {mod_dir.name}")
 
-    # Sync server configs
+async def _sync_server_configs() -> None:
+    """Copy tracked server configs from repo to live server dir."""
     for cfg in ["server.properties", "ops.json", "whitelist.json", "eula.txt"]:
         src = Path(REPO_DIR) / "server" / cfg
         dst = Path(SERVER_DIR) / cfg
         if src.exists():
             shutil.copy(str(src), str(dst))
 
-    # Restart server to load restored mods
-    await _run_shell("sudo systemctl restart minecraft")
 
-    mods_summary = ", ".join(results) if results else "inga mods"
-    return (
-        f"Repo återställt till `{commit_hash}`.\n"
-        f"Mods ombyggda och deployade: {mods_summary}\n"
-        f"Server omstartad — bör vara uppe om ~30 s."
+async def restore_commit(commit_hash: str, target: str = "all") -> str:
+    """
+    Restore to a specific commit.
+
+    target:
+      "all"      — full repo reset + rebuild all mods + sync configs + restart
+      "server"   — restore only server/ configs + restart
+      <modname>  — restore only that mod's source + rebuild + restart
+    """
+    if not re.fullmatch(r"[0-9a-fA-F]{4,40}", commit_hash):
+        return f"Ogiltigt commit-hash: `{commit_hash}`"
+
+    # Always checkpoint current state first
+    await _run_shell(
+        f'git add -A && git commit -m "Checkpoint: before restore {target} to {commit_hash}" --allow-empty',
+        cwd=REPO_DIR,
     )
+
+    if target == "all":
+        stdout, stderr, rc = await _run_shell(
+            f"git reset --hard {commit_hash}", cwd=REPO_DIR
+        )
+        if rc != 0:
+            return f"Restore misslyckades:\n```\n{stderr[:500]}\n```"
+        results = []
+        for mod_dir in sorted(Path(MODS_SOURCE_DIR).iterdir()):
+            if mod_dir.is_dir() and mod_dir.name != "external" and (mod_dir / "build.gradle").exists():
+                results.append(await _build_and_deploy_mod(mod_dir))
+        await _sync_server_configs()
+        await _run_shell("sudo systemctl restart minecraft")
+        return (
+            f"Allt återställt till `{commit_hash}`.\n"
+            f"Mods: {', '.join(results) or 'inga'}\n"
+            f"Server omstartad — uppe om ~30 s."
+        )
+
+    elif target == "server":
+        _, stderr, rc = await _checkout_path(commit_hash, "server/")
+        if rc != 0:
+            return f"Restore server misslyckades:\n```\n{stderr[:400]}\n```"
+        await _sync_server_configs()
+        await _run_shell("sudo systemctl restart minecraft")
+        return (
+            f"Server-configs återställda till `{commit_hash}`.\n"
+            f"Server omstartad — uppe om ~30 s."
+        )
+
+    else:
+        # Specific mod
+        mod_dir = _find_mod_dir(target)
+        if mod_dir is None:
+            return f"Ingen mod hittades med namnet `{target}`."
+        _, stderr, rc = await _checkout_path(commit_hash, f"mods/{mod_dir.name}/")
+        if rc != 0:
+            return f"Restore av `{mod_dir.name}` misslyckades:\n```\n{stderr[:400]}\n```"
+        result = await _build_and_deploy_mod(mod_dir)
+        await _run_shell("sudo systemctl restart minecraft")
+        return (
+            f"Mod `{mod_dir.name}` återställd till `{commit_hash}`.\n"
+            f"{result}\n"
+            f"Server omstartad — uppe om ~30 s."
+        )
 
 
 # ---------------------------------------------------------------------------
