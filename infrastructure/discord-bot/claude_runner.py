@@ -244,10 +244,15 @@ Output EXACTLY one of these lines as the very last line:
         )
         if git_rc != 0:
             await progress(f"Warning: git commit failed — {git_err.strip()[:200]}")
+        else:
+            await progress("Pushing to GitHub...")
+            _out, push_err, push_rc = await _run_shell("git push", cwd=REPO_DIR)
+            if push_rc != 0:
+                await progress(f"Warning: git push failed — {push_err.strip()[:200]}")
         return (
             f"Mod **{mod_id}** deployed successfully!\n"
             f"The Minecraft server needs a restart to load it.\n"
-            f"Git checkpoint created: _{git_msg}_"
+            f"Git checkpoint created and pushed: _{git_msg}_"
         )
 
     if status_line and status_line.startswith("FAILURE:"):
