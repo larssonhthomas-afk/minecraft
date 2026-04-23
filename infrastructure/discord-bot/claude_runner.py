@@ -12,7 +12,7 @@ from pathlib import Path
 
 REPO_DIR = "/opt/minecraft-dev/minecraft"
 MODS_SOURCE_DIR = f"{REPO_DIR}/mods"
-SERVER_DIR = "/var/opt/minecraft/server"
+SERVER_DIR = "/opt/minecraft-dev/minecraft/server"
 SERVER_MODS_DIR = f"{SERVER_DIR}/mods"
 SERVER_MODS_DISABLED_DIR = f"{SERVER_DIR}/mods-disabled"
 LIFESTEAL_JSON = f"{SERVER_DIR}/world/lifesteal.json"

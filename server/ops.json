@@ -1,0 +1,14 @@
+[
+  {
+    "uuid": "9dd7ffcd-52c8-42e4-8b2c-a4ae80cd2258",
+    "name": "MasterOlley",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "2816882c-1f78-4120-be08-510de891438c",
+    "name": "Laskplaski",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  }
+]

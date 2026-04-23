@@ -1,6 +1,8 @@
+world/
 logs/
 libraries/
 versions/
+*.jar
 usercache.json
 banned-ips.json
 banned-players.json
