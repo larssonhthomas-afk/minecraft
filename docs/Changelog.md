@@ -6,6 +6,10 @@ Format inspirerat av [Keep a Changelog](https://keepachangelog.com/). Datum är 
 
 ## 2026-04-23 (bot-förbättring)
 
+### Nytt
+
+- **`!reset`** — Återställer alla spelares HP till 20 (10 hjärtan), även utloggade. Stoppar servern automatiskt, skriver om `lifesteal.json`, startar om. Tar ~40 sekunder.
+
 ### Förbättrat
 
 - **Discord-bot:** `!create` pushar nu automatiskt till GitHub efter checkpoint-commit — ingen manuell `git push` behövs.
