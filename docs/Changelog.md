@@ -4,6 +4,29 @@ Alla noterbara ändringar i det här repot dokumenteras här.
 
 Format inspirerat av [Keep a Changelog](https://keepachangelog.com/). Datum är i ISO-format. Projektet har ännu ingen semantisk versionering — entries grupperas per dag.
 
+## 2026-04-23 (infrastruktur & bot-omskrivning)
+
+### Nytt
+
+- **`!change <modnamn> <beskrivning>`** — Ändrar en befintlig mod med samma plan→frågor→build-flöde som `!create`. Hittar modens källkod automatiskt.
+- **`!server`** — Rik serverstatus: RAM-förbrukning, diskutrymme, uptime, aktiva spelare (från journallog) och antal laddade mods.
+- **Server-configs i repot** — `server/` (eula, server.properties, ops.json, whitelist.json, mods/, config/) är nu versionshanterat. Exkluderat: world/, libs, jars, loggar.
+
+### Förbättrat
+
+- **`!create`-flöde: plan + bekräftelse** — Analysfasen returnerar alltid en läsbar plan. Den sista följdfrågan är alltid `"build?"` — bygget startar inte utan ja.
+- **`!restart`** — Använder nu `sudo systemctl restart minecraft` (inte Crafty API). Pollar port 25565 i upp till 90 sekunder och postar "🟢 Servern är uppe igen!" i tråden när porten svarar.
+- **`!restore`** — Tre lägen:
+  - `!restore <hash>` — Återställer allt (repo + alla mods + server-configs + omstart).
+  - `!restore server <hash>` — Återställer bara server-configs (server.properties, ops, whitelist, eula) + omstart.
+  - `!restore <modnamn> <hash>` — Återställer bara en mods källkod, bygger om och deployer + omstart.
+
+### Infrastruktur
+
+- **Crafty Controller borttaget** — Webbpanelen är avinstallerad. Servern hanteras enbart via `systemd`-tjänst (`minecraft.service`) under `crafty`-användaren.
+- **`sudoers`-regel** — `deploy`-användaren kan köra `systemctl start/stop/restart/status minecraft` utan lösenord.
+- **`server/.gitignore`** — Exkluderar world/, libraries/, versions/, jars, loggar och cachefiler.
+
 ## 2026-04-23 (bot-förbättring)
 
 ### Nytt
