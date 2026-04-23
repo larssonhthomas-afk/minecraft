@@ -466,80 +466,34 @@ async def restart_server() -> str:
 async def reset_health() -> str:
     """
     Reset all players' max health to 20 HP.
-    Must stop server first — otherwise the server overwrites the file on shutdown.
-    Sequence: stop → edit lifesteal.json → start.
+    Must stop server first — otherwise it overwrites the file on shutdown.
+    Sequence: systemctl stop → edit lifesteal.json → systemctl start.
     """
-    import ssl, urllib.request
+    path = Path(LIFESTEAL_JSON)
+    if not path.exists():
+        return "❌ `lifesteal.json` hittades inte — har servern startats någon gång?"
 
-    crafty_url = os.environ.get("CRAFTY_URL", "https://localhost:8443")
-    username   = os.environ["CRAFTY_USERNAME"]
-    password   = os.environ["CRAFTY_PASSWORD"]
-    server_id  = os.environ.get("CRAFTY_SERVER_ID", "97dc0db9-50ed-4ecf-a28b-b4f7d2fe0908")
+    # Stop server
+    _, _, rc = await _run_shell("sudo systemctl stop minecraft", timeout=60)
+    if rc != 0:
+        return "❌ Kunde inte stoppa minecraft.service."
 
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    # Wait for process to fully exit
+    await asyncio.sleep(5)
 
-    loop = asyncio.get_event_loop()
+    # Edit lifesteal.json
+    with path.open() as f:
+        data = json.load(f)
 
-    def _crafty(method: str, endpoint: str, token: str, body: bytes = b""):
-        req = urllib.request.Request(
-            f"{crafty_url}{endpoint}",
-            data=body or None,
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            method=method,
-        )
-        with urllib.request.urlopen(req, context=ctx, timeout=10) as r:
-            return json.loads(r.read())
+    count = len(data)
+    reset_data = {uuid: VANILLA_MAX_HEALTH for uuid in data}
+    with path.open("w") as f:
+        json.dump(reset_data, f, indent=2)
 
-    def _do_reset():
-        # Login
-        login_req = urllib.request.Request(
-            f"{crafty_url}/api/v2/auth/login",
-            data=json.dumps({"username": username, "password": password}).encode(),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(login_req, context=ctx, timeout=10) as r:
-            token = json.loads(r.read())["data"]["token"]
+    # Start server
+    await _run_shell("sudo systemctl start minecraft", timeout=30)
 
-        # Stop server
-        _crafty("POST", f"/api/v2/servers/{server_id}/action/stop", token)
-
-        # Wait for server to stop (max 30s)
-        import time
-        for _ in range(15):
-            time.sleep(2)
-            status = _crafty("GET", f"/api/v2/servers/{server_id}/stats", token)
-            if status.get("data", {}).get("running") is False:
-                break
-
-        # Edit lifesteal.json
-        path = Path(LIFESTEAL_JSON)
-        if not path.exists():
-            _crafty("POST", f"/api/v2/servers/{server_id}/action/start", token)
-            return None, "❌ `lifesteal.json` hittades inte."
-
-        with path.open() as f:
-            data = json.load(f)
-
-        count = len(data)
-        reset_data = {uuid: VANILLA_MAX_HEALTH for uuid in data}
-        with path.open("w") as f:
-            json.dump(reset_data, f, indent=2)
-
-        # Start server
-        _crafty("POST", f"/api/v2/servers/{server_id}/action/start", token)
-
-        return count, None
-
-    try:
-        count, err = await loop.run_in_executor(None, _do_reset)
-        if err:
-            return err
-        return (
-            f"✅ **{count} spelare** återställda till 20 HP (10 hjärtan).\n"
-            f"Servern startas om automatiskt — spelarna kan logga in om ~30 sekunder."
-        )
-    except Exception as exc:
-        return f"❌ Reset misslyckades: {exc}"
+    return (
+        f"✅ **{count} spelare** återställda till 20 HP (10 hjärtan).\n"
+        f"Servern startar nu — spelarna kan logga in om ~30 sekunder."
+    )
