@@ -30,6 +30,7 @@ from claude_runner import (
     get_history,
     get_server_status,
     restart_server,
+    reset_health,
 )
 
 load_dotenv()
@@ -67,8 +68,9 @@ HELP_TEXT = """\
 `!activate <modnamn>` — Aktivera en inaktiverad mod.
 `!restore <commit-hash>` — Återställ repot till en specifik Git-version.
 `!history` — Visa de 10 senaste Git-commits med hash.
-`!status` — Visa om Minecraft-servern är igång.
+`!server` — Visa serverstatus, RAM, disk och aktiva spelare.
 `!restart` — Starta om Minecraft-servern.
+`!reset` — Återställ alla spelares HP till standard 20 HP (10 hjärtan).
 `!help` — Visa denna lista.
 
 Alla svar visas i trådar.
@@ -97,7 +99,7 @@ async def server_watchdog():
     if channel is None:
         return
 
-    is_online = "online" in await get_server_status()
+    is_online = "ONLINE" in await get_server_status()
 
     if _server_was_online is None:
         # First check — just record state, no notification
@@ -106,7 +108,7 @@ async def server_watchdog():
 
     if _server_was_online and not is_online:
         log.warning("Server went offline — notifying Discord")
-        await channel.send("🔴 **Minecraft-servern är nere!** Kolla Crafty eller kör `!restart`.")
+        await channel.send("🔴 **Minecraft-servern är nere!** Kör `!restart` för att starta om.")
     elif not _server_was_online and is_online:
         log.info("Server came back online — notifying Discord")
         await channel.send("🟢 **Minecraft-servern är tillbaka online!**")
@@ -326,8 +328,8 @@ async def cmd_history(ctx: commands.Context):
         await thread.send(f"Error: {exc}")
 
 
-@bot.command(name="status")
-async def cmd_status(ctx: commands.Context):
+@bot.command(name="server")
+async def cmd_server(ctx: commands.Context):
     thread = await get_or_create_thread(ctx.message, "server status")
     try:
         await thread.send(await get_server_status())
@@ -338,9 +340,19 @@ async def cmd_status(ctx: commands.Context):
 @bot.command(name="restart")
 async def cmd_restart(ctx: commands.Context):
     thread = await get_or_create_thread(ctx.message, "server restart")
-    await thread.send("Restarting the Minecraft server via Crafty...")
+    await thread.send("Startar om Minecraft-servern...")
     try:
         await thread.send(await restart_server())
+    except Exception as exc:
+        await thread.send(f"Error: {exc}")
+
+
+@bot.command(name="reset")
+async def cmd_reset(ctx: commands.Context):
+    thread = await get_or_create_thread(ctx.message, "reset health")
+    await thread.send("Återställer alla spelares HP till 20...")
+    try:
+        await thread.send(await reset_health())
     except Exception as exc:
         await thread.send(f"Error: {exc}")
 

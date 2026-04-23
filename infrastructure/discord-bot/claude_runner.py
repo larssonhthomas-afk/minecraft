@@ -12,9 +12,11 @@ from pathlib import Path
 
 REPO_DIR = "/opt/minecraft-dev/minecraft"
 MODS_SOURCE_DIR = f"{REPO_DIR}/mods"
-SERVER_DIR = "/var/opt/minecraft/crafty/crafty-4/servers/97dc0db9-50ed-4ecf-a28b-b4f7d2fe0908"
+SERVER_DIR = "/var/opt/minecraft/server"
 SERVER_MODS_DIR = f"{SERVER_DIR}/mods"
 SERVER_MODS_DISABLED_DIR = f"{SERVER_DIR}/mods-disabled"
+LIFESTEAL_JSON = f"{SERVER_DIR}/world/lifesteal.json"
+VANILLA_MAX_HEALTH = 20.0
 LIFESTEAL_TEMPLATE = f"{MODS_SOURCE_DIR}/lifesteal"
 
 
@@ -367,20 +369,68 @@ async def get_history() -> str:
 
 
 # ---------------------------------------------------------------------------
-# !status
+# !server
 # ---------------------------------------------------------------------------
 
 async def get_server_status() -> str:
-    """Check whether the Minecraft server is listening on port 25565."""
-    stdout, _stderr, rc = await _run_shell(
-        "python3 -c \""
-        "import socket, sys; s=socket.socket(); s.settimeout(2); "
-        "sys.exit(0 if s.connect_ex(('localhost', 25565)) == 0 else 1)"
-        "\""
+    """Return a rich server status: online/offline, players, RAM, disk, uptime."""
+    import socket
+
+    # Online check
+    s = socket.socket()
+    s.settimeout(2)
+    online = s.connect_ex(("localhost", 25565)) == 0
+    s.close()
+    status_line = "🟢 **ONLINE**" if online else "🔴 **OFFLINE**"
+
+    lines = [f"**Minecraft Server — {status_line}**", ""]
+
+    # Uptime via systemctl
+    uptime_out, _, rc = await _run_shell(
+        "systemctl show minecraft --property=ActiveEnterTimestamp --value 2>/dev/null"
     )
-    if rc == 0:
-        return "Minecraft server is **online** (port 25565 is reachable)."
-    return "Minecraft server is **offline** (port 25565 is not reachable)."
+    if rc == 0 and uptime_out.strip():
+        lines.append(f"⏱ Uppe sedan: `{uptime_out.strip()}`")
+
+    # Players via log (last "joined/left" counts)
+    players_out, _, _ = await _run_shell(
+        "journalctl -u minecraft -n 500 --no-pager -o cat 2>/dev/null"
+        " | grep -E 'joined the game|left the game|lost connection'"
+        " | tail -50"
+    )
+    if players_out:
+        joined = set()
+        for line in players_out.strip().splitlines():
+            if "joined the game" in line:
+                name = line.split("]:")[-1].replace("joined the game", "").strip()
+                joined.add(name)
+            elif "left the game" in line or "lost connection" in line:
+                name = line.split("]:")[-1].split("lost connection")[0].replace("left the game", "").strip()
+                joined.discard(name)
+        if joined:
+            lines.append(f"👥 Online: {', '.join(sorted(joined))}")
+        else:
+            lines.append("👥 Inga spelare online")
+
+    # RAM
+    mem_out, _, _ = await _run_shell(
+        "free -m | awk '/^Mem:/ {printf \"%s MB used / %s MB total\", $3, $2}'"
+    )
+    if mem_out:
+        lines.append(f"🧠 RAM: `{mem_out.strip()}`")
+
+    # Disk
+    disk_out, _, _ = await _run_shell(
+        "df -h / | awk 'NR==2 {printf \"%s used / %s total (%s)\", $3, $2, $5}'"
+    )
+    if disk_out:
+        lines.append(f"💾 Disk: `{disk_out.strip()}`")
+
+    # Active mods count
+    mods = list(Path(SERVER_MODS_DIR).glob("*.jar"))
+    lines.append(f"🧩 Aktiva mods: {len(mods)}")
+
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -388,45 +438,50 @@ async def get_server_status() -> str:
 # ---------------------------------------------------------------------------
 
 async def restart_server() -> str:
-    """Restart the Minecraft server via Crafty Controller REST API."""
-    import ssl
-    import urllib.request
+    """Restart the Minecraft server via systemctl, wait until port 25565 is up."""
+    import socket as _socket
+    import asyncio as _asyncio
 
-    crafty_url = os.environ.get("CRAFTY_URL", "https://localhost:8443")
-    username = os.environ["CRAFTY_USERNAME"]
-    password = os.environ["CRAFTY_PASSWORD"]
-    server_id = os.environ.get("CRAFTY_SERVER_ID", "97dc0db9-50ed-4ecf-a28b-b4f7d2fe0908")
+    stdout, stderr, rc = await _run_shell("sudo systemctl restart minecraft")
+    if rc != 0:
+        return f"Failed to restart server:\n```\n{stderr[:400]}\n```"
 
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    # Wait up to 90 s for the server to accept connections
+    for _ in range(45):
+        await _asyncio.sleep(2)
+        s = _socket.socket()
+        s.settimeout(1)
+        up = s.connect_ex(("localhost", 25565)) == 0
+        s.close()
+        if up:
+            return "🟢 **Servern är uppe igen!**"
 
-    loop = asyncio.get_event_loop()
+    return "⚠️ Restart skickad men servern svarar inte på port 25565 efter 90 s — kolla loggar med `journalctl -u minecraft -f`."
 
-    def _api_call():
-        # 1 — Login
-        login_data = json.dumps({"username": username, "password": password}).encode()
-        req = urllib.request.Request(
-            f"{crafty_url}/api/v2/auth/login",
-            data=login_data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, context=ctx, timeout=10) as resp:
-            token = json.loads(resp.read())["data"]["token"]
 
-        # 2 — Restart
-        req2 = urllib.request.Request(
-            f"{crafty_url}/api/v2/servers/{server_id}/action/restart",
-            data=b"",
-            headers={"Authorization": f"Bearer {token}"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req2, context=ctx, timeout=10) as resp2:
-            return json.loads(resp2.read())
+# ---------------------------------------------------------------------------
+# !reset
+# ---------------------------------------------------------------------------
 
-    try:
-        result = await loop.run_in_executor(None, _api_call)
-        return "Server restart initiated. It will be back online in ~30 seconds."
-    except Exception as exc:
-        return f"Failed to restart server: {exc}"
+async def reset_health() -> str:
+    """Reset all players' max health to 20 HP in lifesteal.json."""
+    path = Path(LIFESTEAL_JSON)
+    if not path.exists():
+        return "❌ `lifesteal.json` hittades inte — har servern startats någon gång?"
+
+    with path.open() as f:
+        data = json.load(f)
+
+    if not data:
+        return "ℹ️ Inga spelare i lifesteal.json — ingenting att återställa."
+
+    count = len(data)
+    reset_data = {uuid: VANILLA_MAX_HEALTH for uuid in data}
+
+    with path.open("w") as f:
+        json.dump(reset_data, f, indent=2)
+
+    return (
+        f"✅ **{count} spelare** återställda till 20 HP (10 hjärtan).\n"
+        f"Inloggade spelare behöver logga ut och in igen — eller starta om servern med `!restart`."
+    )
