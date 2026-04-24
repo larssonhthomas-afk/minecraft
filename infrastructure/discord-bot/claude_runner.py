@@ -98,15 +98,21 @@ def generate_mod_names(description: str) -> dict:
 
 def _find_mod_dir(modname: str) -> Path | None:
     """Find a mod source directory by exact or partial name match."""
+    # Strip .jar extension and version suffix (e.g. "ranked_smp_rank-1.0.0.jar" → "ranked_smp_rank")
+    if modname.lower().endswith(".jar"):
+        modname = modname[:-4]
     mods_path = Path(MODS_SOURCE_DIR)
     # Exact match first
     exact = mods_path / modname
     if exact.is_dir() and (exact / "src").exists():
         return exact
-    # Partial match (case-insensitive)
+    # Partial match (case-insensitive, both directions)
+    needle = modname.lower()
     for d in sorted(mods_path.iterdir()):
-        if d.is_dir() and (d / "src").exists() and modname.lower() in d.name.lower():
-            return d
+        if d.is_dir() and (d / "src").exists():
+            dn = d.name.lower()
+            if needle in dn or dn in needle:
+                return d
     return None
 
 

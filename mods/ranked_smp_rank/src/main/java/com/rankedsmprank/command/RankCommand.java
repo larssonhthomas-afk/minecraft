@@ -53,8 +53,9 @@ public final class RankCommand {
             sb.append(ranked$tierColor(tier)).append("[R").append(tier).append("] ")
               .append("§f").append(name).append(" ")
               .append(status).append("§7 — ")
-              .append((int) def.rankHp()).append("HP +")
-              .append((int) ((def.potionMultiplier() - 1) * 100)).append("% pots")
+              .append((int) def.rankHp()).append("HP, +")
+              .append(Math.round((def.potionMultiplier() - 1) * 100)).append("% pots, +")
+              .append(Math.round((def.xpMultiplier() - 1) * 100)).append("% XP")
               .append("\n");
         }
 

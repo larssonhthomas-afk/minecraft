@@ -31,8 +31,7 @@ public final class RankedSmpRankActions {
             return;
         }
         RankDefinition def = RankDefinition.forTier(tier);
-        boolean clean = store.isCleanMode(player.getUuid());
-        applyMaxHealth(player, def.computeMaxHealth(clean));
+        applyMaxHealth(player, def.computeMaxHealth());
     }
 
     /** Handle a PvP kill: swap ranks if applicable. */

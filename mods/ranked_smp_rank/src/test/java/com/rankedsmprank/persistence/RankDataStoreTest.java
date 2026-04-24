@@ -51,25 +51,6 @@ class RankDataStoreTest {
     }
 
     @Test
-    void cleanModeDefaultsFalse() throws IOException {
-        RankDataStore store = RankDataStore.loadOrCreate(dir.resolve("r.json"));
-        assertFalse(store.isCleanMode(UUID.randomUUID()));
-    }
-
-    @Test
-    void cleanModePersists() throws IOException {
-        Path p = dir.resolve("r.json");
-        UUID uuid = UUID.randomUUID();
-
-        RankDataStore store = RankDataStore.loadOrCreate(p);
-        store.setCleanMode(uuid, true);
-        store.save();
-
-        RankDataStore reloaded = RankDataStore.loadOrCreate(p);
-        assertTrue(reloaded.isCleanMode(uuid));
-    }
-
-    @Test
     void playerNameDefaultsToUuidString() throws IOException {
         RankDataStore store = RankDataStore.loadOrCreate(dir.resolve("r.json"));
         UUID uuid = UUID.randomUUID();
@@ -126,5 +107,16 @@ class RankDataStoreTest {
 
         RankDataStore final_ = RankDataStore.loadOrCreate(p);
         assertEquals(3, final_.getTier(uuid));
+    }
+
+    @Test
+    void legacyCleanModeFieldIsIgnoredOnLoad() throws IOException {
+        // Write a JSON file that contains the old "cleanMode" field
+        Path p = dir.resolve("r.json");
+        java.nio.file.Files.writeString(p,
+                "{\"tiers\":{},\"cleanMode\":{\"" + UUID.randomUUID() + "\":true},\"names\":{}}");
+        // Should load without error and ignore cleanMode
+        RankDataStore store = RankDataStore.loadOrCreate(p);
+        assertNotNull(store);
     }
 }

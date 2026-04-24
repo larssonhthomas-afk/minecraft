@@ -7,14 +7,13 @@ import java.nio.file.*;
 import java.util.*;
 
 /**
- * JSON-backed persistence for rank assignments and per-player display preferences.
+ * JSON-backed persistence for rank assignments and player names.
  * Thread-safe via synchronized methods.
  */
 public class RankDataStore {
 
     private final Path path;
     private final Map<UUID, Integer> playerTiers = new HashMap<>();
-    private final Map<UUID, Boolean> cleanModeMap = new HashMap<>();
     private final Map<UUID, String> playerNames = new HashMap<>();
 
     private RankDataStore(Path path) {
@@ -39,16 +38,12 @@ public class RankDataStore {
                     playerTiers.put(UUID.fromString(e.getKey()), e.getValue().getAsInt());
                 }
             }
-            if (root.has("cleanMode")) {
-                for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("cleanMode").entrySet()) {
-                    cleanModeMap.put(UUID.fromString(e.getKey()), e.getValue().getAsBoolean());
-                }
-            }
             if (root.has("names")) {
                 for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("names").entrySet()) {
                     playerNames.put(UUID.fromString(e.getKey()), e.getValue().getAsString());
                 }
             }
+            // "cleanMode" field is ignored (feature removed)
         }
     }
 
@@ -62,14 +57,6 @@ public class RankDataStore {
 
     public synchronized void clearAllTiers() {
         playerTiers.clear();
-    }
-
-    public synchronized boolean isCleanMode(UUID uuid) {
-        return cleanModeMap.getOrDefault(uuid, false);
-    }
-
-    public synchronized void setCleanMode(UUID uuid, boolean clean) {
-        cleanModeMap.put(uuid, clean);
     }
 
     public synchronized String getPlayerName(UUID uuid) {
@@ -93,12 +80,6 @@ public class RankDataStore {
             tiers.addProperty(e.getKey().toString(), e.getValue());
         }
         root.add("tiers", tiers);
-
-        JsonObject clean = new JsonObject();
-        for (Map.Entry<UUID, Boolean> e : cleanModeMap.entrySet()) {
-            clean.addProperty(e.getKey().toString(), e.getValue());
-        }
-        root.add("cleanMode", clean);
 
         JsonObject names = new JsonObject();
         for (Map.Entry<UUID, String> e : playerNames.entrySet()) {

@@ -1,7 +1,6 @@
 package com.rankedsmprank;
 
 import com.rankedsmprank.command.BagCommand;
-import com.rankedsmprank.command.HeartCommand;
 import com.rankedsmprank.command.RandomRankCommand;
 import com.rankedsmprank.command.RankCommand;
 import com.rankedsmprank.inventory.ExtraInventoryManager;
@@ -74,7 +73,6 @@ public final class RankedSmpRankMod implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, env) -> {
             RankCommand.register(dispatcher);
             RandomRankCommand.register(dispatcher);
-            HeartCommand.register(dispatcher);
             BagCommand.register(dispatcher);
         });
     }

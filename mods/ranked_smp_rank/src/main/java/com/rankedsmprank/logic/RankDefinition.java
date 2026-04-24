@@ -4,8 +4,7 @@ import java.util.List;
 
 /**
  * Immutable descriptor for one rank tier.
- * All HP values are in raw Minecraft health points (20 = 10 hearts).
- * Hearts above 10 (HP > 20) are intentionally worth 1 HP each instead of 2.
+ * All HP values are in raw Minecraft health points (20 = 10 hearts, 2 HP = 1 heart).
  */
 public record RankDefinition(
         int tier,
@@ -34,16 +33,9 @@ public record RankDefinition(
         throw new IllegalArgumentException("Invalid tier: " + tier);
     }
 
-    /**
-     * Computes the Minecraft maxHealth attribute value to set on the player.
-     *
-     * Default (cleanMode=false): each HP above 20 renders as a FULL heart on screen.
-     * Clean   (cleanMode=true):  each HP above 20 renders as a HALF heart (saves screen space).
-     */
-    public float computeMaxHealth(boolean cleanMode) {
-        if (rankHp <= 20.0f) return rankHp;
-        if (cleanMode) return rankHp;
-        return 20.0f + (rankHp - 20.0f) * 2.0f;
+    /** Returns the maxHealth attribute value to set (2 HP = 1 heart, normal proportion). */
+    public float computeMaxHealth() {
+        return rankHp;
     }
 
     /** Number of inventory rows needed (each row = 9 slots, rounded up). */

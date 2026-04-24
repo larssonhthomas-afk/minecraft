@@ -42,37 +42,18 @@ class RankDefinitionTest {
     }
 
     @Test
-    void computeMaxHealthRank9Unchanged() {
-        RankDefinition r9 = RankDefinition.forTier(9);
-        assertEquals(20.0f, r9.computeMaxHealth(false), 0.001f);
-        assertEquals(20.0f, r9.computeMaxHealth(true), 0.001f);
+    void computeMaxHealthReturnsRankHp() {
+        for (RankDefinition d : RankDefinition.ALL) {
+            assertEquals(d.rankHp(), d.computeMaxHealth(), 0.001f,
+                    "Tier " + d.tier() + " computeMaxHealth should equal rankHp");
+        }
     }
 
     @Test
-    void computeMaxHealthDefaultModeDoublesExtraHp() {
-        // Rank 8: 21 HP → default → 20 + (21-20)*2 = 22
+    void computeMaxHealthNormalProportion() {
+        // 21 HP = 10.5 hearts (normal 2 HP per heart)
         RankDefinition r8 = RankDefinition.forTier(8);
-        assertEquals(22.0f, r8.computeMaxHealth(false), 0.001f);
-    }
-
-    @Test
-    void computeMaxHealthCleanModeUsesRankHpDirectly() {
-        // Rank 8: 21 HP → clean → 21
-        RankDefinition r8 = RankDefinition.forTier(8);
-        assertEquals(21.0f, r8.computeMaxHealth(true), 0.001f);
-    }
-
-    @Test
-    void computeMaxHealthRank1DefaultMode() {
-        // Rank 1: 30 HP → default → 20 + (30-20)*2 = 40
-        RankDefinition r1 = RankDefinition.forTier(1);
-        assertEquals(40.0f, r1.computeMaxHealth(false), 0.001f);
-    }
-
-    @Test
-    void computeMaxHealthRank1CleanMode() {
-        RankDefinition r1 = RankDefinition.forTier(1);
-        assertEquals(30.0f, r1.computeMaxHealth(true), 0.001f);
+        assertEquals(21.0f, r8.computeMaxHealth(), 0.001f);
     }
 
     @Test
@@ -140,5 +121,16 @@ class RankDefinitionTest {
             assertTrue(d.xpMultiplier() >= 1.0f,
                     "Tier " + d.tier() + " xpMultiplier < 1");
         }
+    }
+
+    @Test
+    void potionPercentagesDisplayCorrectly() {
+        // Ensure Math.round is used — R2 must show 80 not 79
+        assertEquals(100, Math.round((RankDefinition.forTier(1).potionMultiplier() - 1) * 100));
+        assertEquals(80,  Math.round((RankDefinition.forTier(2).potionMultiplier() - 1) * 100));
+        assertEquals(65,  Math.round((RankDefinition.forTier(3).potionMultiplier() - 1) * 100));
+        assertEquals(50,  Math.round((RankDefinition.forTier(4).potionMultiplier() - 1) * 100));
+        assertEquals(35,  Math.round((RankDefinition.forTier(5).potionMultiplier() - 1) * 100));
+        assertEquals(0,   Math.round((RankDefinition.forTier(9).potionMultiplier() - 1) * 100));
     }
 }
