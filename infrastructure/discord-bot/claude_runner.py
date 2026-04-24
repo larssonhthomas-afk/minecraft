@@ -24,6 +24,14 @@ LIFESTEAL_TEMPLATE = f"{MODS_SOURCE_DIR}/lifesteal"
 # Low-level helpers
 # ---------------------------------------------------------------------------
 
+def _read_source_files(mod_dir: Path) -> str:
+    """Read all Java source files and return them as a formatted string."""
+    parts = []
+    for f in sorted(mod_dir.rglob("*.java")):
+        rel = f.relative_to(mod_dir)
+        parts.append(f"### {rel}\n```java\n{f.read_text(errors='replace')}\n```")
+    return "\n\n".join(parts)
+
 async def _run_claude(prompt: str, cwd: str = REPO_DIR, timeout: int = 1200) -> tuple[str, str, int]:
     """Run Claude Code in non-interactive print mode."""
     env = {**os.environ}
@@ -312,16 +320,20 @@ async def analyze_change_request(modname: str, description: str) -> dict:
     if mod_dir is None:
         return {"found": False, "mod_dir": None, "questions": []}
 
+    source_files = _read_source_files(mod_dir)
+
     prompt = f"""You are analyzing a request to modify an existing Minecraft Fabric mod.
 
 Mod directory: {mod_dir}
 Change request: {description}
 
+## Existing source files
+{source_files}
+
 Tasks:
-1. Read the existing source files under {mod_dir}/src/
-2. Create a brief plan (2-5 bullet points) describing exactly what will change.
-3. Add up to 1 clarifying question if something is ambiguous.
-4. ALWAYS append "build?" as the very last question.
+1. Create a brief plan (2-5 bullet points) describing exactly what will change.
+2. Add up to 1 clarifying question if something is ambiguous.
+3. ALWAYS append "build?" as the very last question.
 
 Output ONLY valid JSON — no markdown, no prose, no code fences:
 {{
@@ -348,6 +360,39 @@ Rules:
     return {"found": True, "mod_dir": str(mod_dir), "questions": ["build?"]}
 
 
+def _ask_claude_for_edits(source_files: str, description: str, qa_section: str, error_output: str = "") -> str:
+    """
+    Call claude -p asking for file edits as JSON (no tool calls).
+    Returns raw stdout from the process.
+    """
+    error_section = (
+        f"\n\n## Test failure output — fix these errors\n```\n{error_output}\n```"
+        if error_output else ""
+    )
+    return f"""You are a Minecraft Fabric 1.21.4 mod developer.
+
+## Existing source files
+{source_files}
+
+## Change request
+{description}{qa_section}{error_section}
+
+## Task
+Output the COMPLETE new contents of every file that needs to change.
+Preserve the existing architecture:
+- Pure logic stays in logic/* (no Minecraft imports)
+- Thin Mixin wrappers stay in mixin/*
+- Update or add JUnit 5 tests for any changed logic
+
+Output ONLY valid JSON, no markdown, no code fences:
+{{
+  "files": [
+    {{"path": "src/main/java/com/example/Foo.java", "content": "package com.example;\\n..."}}
+  ]
+}}
+"""
+
+
 async def change_mod(
     modname: str,
     mod_dir: str,
@@ -360,8 +405,8 @@ async def change_mod(
     """
     Phase 2 of !change: apply changes, rebuild, redeploy.
 
-    progress_cb — optional async callable(str) for streaming progress messages.
-    Returns a human-readable result string.
+    Claude outputs file contents as JSON (no tool calls → fast).
+    Python writes the files, runs tests/build, and deploys.
     """
     async def progress(msg: str):
         if progress_cb:
@@ -374,69 +419,88 @@ async def change_mod(
         pairs = [f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)]
         qa_section = "\n\n## Clarifications from the user\n" + "\n\n".join(pairs)
 
-    prompt = f"""You are modifying an existing Minecraft Fabric 1.21.4 mod.
+    def apply_edits(stdout: str, base: Path) -> int:
+        """Parse JSON file list from stdout and write to disk. Returns number of files written."""
+        match = re.search(r"\{.*\}", stdout, re.DOTALL)
+        if not match:
+            return 0
+        try:
+            data = json.loads(match.group())
+        except json.JSONDecodeError:
+            return 0
+        count = 0
+        for entry in data.get("files", []):
+            path = base / entry["path"]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(entry["content"], encoding="utf-8")
+            count += 1
+        return count
 
-## Mod to modify
-Directory: {mod_dir}
+    # Step 1: Ask Claude for edits (text output only — no subprocess tool calls)
+    await progress("Claude is planning and writing changes...")
+    source = _read_source_files(Path(mod_dir))
+    prompt = _ask_claude_for_edits(source, description, qa_section)
+    stdout, _stderr, _rc = await _run_claude(prompt, cwd=REPO_DIR, timeout=120)
+    written = apply_edits(stdout, Path(mod_dir))
+    if written == 0:
+        return f"Claude returnerade inga filändringar.\nOutput:\n```\n{stdout[-500:]}\n```"
 
-## Change request
-{description}{qa_section}
+    # Step 2: Test/fix loop — Python runs tests, Claude only fixes on failure
+    MAX_ATTEMPTS = 5
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        await progress(f"Running tests (attempt {attempt}/{MAX_ATTEMPTS})...")
+        test_out, test_err, test_rc = await _run_shell(
+            "./gradlew test 2>&1", cwd=mod_dir, timeout=120
+        )
+        combined = (test_out + test_err).strip()
+        if test_rc == 0:
+            break
+        if attempt == MAX_ATTEMPTS:
+            return (
+                f"Kunde inte ändra **{modname}** — tester misslyckas efter {MAX_ATTEMPTS} försök.\n\n"
+                f"**Sista fel:**\n```\n{combined[-800:]}\n```"
+            )
+        await progress(f"Tests failed — asking Claude to fix (attempt {attempt})...")
+        source = _read_source_files(Path(mod_dir))
+        fix_prompt = _ask_claude_for_edits(source, description, qa_section, combined[-2000:])
+        stdout, _stderr, _rc = await _run_claude(fix_prompt, cwd=REPO_DIR, timeout=120)
+        apply_edits(stdout, Path(mod_dir))
 
-## Instructions
-1. Read ALL existing source files in {mod_dir}/src/ to understand the current implementation.
-2. Make the requested changes while preserving the existing architecture:
-   - Pure logic stays in logic/* (no Minecraft imports)
-   - Thin Mixin wrappers stay in mixin/*
-   - Update or add JUnit 5 tests for any changed logic
-3. Run: cd {mod_dir} && ./gradlew test
-4. If tests FAIL: read the error output, fix the code, run again. Repeat up to 5 times total.
-5. If tests still fail after 5 attempts: stop and output FAILURE.
-6. If tests PASS: run ./gradlew build
-7. Copy the built jar: cp {mod_dir}/build/libs/{modname}-*.jar {SERVER_MODS_DIR}/
-
-## Final output (REQUIRED — last line of your response, nothing after it)
-Output EXACTLY one of these lines:
-  SUCCESS: {modname}
-  FAILURE: <clear explanation of what failed>
-"""
-
-    await progress("Claude is applying changes and running tests...")
-    stdout, _stderr, _rc = await _run_claude(prompt, cwd=REPO_DIR, timeout=1200)
-
-    last_lines = stdout.strip().split("\n")[-5:]
-    status_line = next(
-        (l for l in reversed(last_lines) if l.startswith("SUCCESS:") or l.startswith("FAILURE:")),
-        None,
+    # Step 3: Build
+    await progress("Tests passed — building jar...")
+    build_out, build_err, build_rc = await _run_shell(
+        f"cd {mod_dir} && ./gradlew build 2>&1", cwd=mod_dir, timeout=120
     )
+    if build_rc != 0:
+        combined = (build_out + build_err).strip()
+        return f"Build misslyckades.\n```\n{combined[-800:]}\n```"
 
-    if status_line and status_line.startswith("SUCCESS:"):
-        await progress("Tests passed — creating git checkpoint...")
-        git_msg = f"Checkpoint: {modname} changed by {discord_user}"
-        _out, git_err, git_rc = await _run_shell(
-            f'git add -A && git commit -m "{git_msg}"',
-            cwd=REPO_DIR,
-        )
-        if git_rc != 0:
-            await progress(f"Warning: git commit failed — {git_err.strip()[:200]}")
-        else:
-            await progress("Pushing to GitHub...")
-            _out, push_err, push_rc = await _run_shell("git push", cwd=REPO_DIR)
-            if push_rc != 0:
-                await progress(f"Warning: git push failed — {push_err.strip()[:200]}")
-        return (
-            f"Mod **{modname}** uppdaterad!\n"
-            f"Servern behöver startas om för att ladda ändringarna.\n"
-            f"Git checkpoint skapad och pushad: _{git_msg}_"
-        )
+    # Step 4: Deploy jar
+    jars = list(Path(mod_dir).glob("build/libs/*.jar"))
+    jars = [j for j in jars if "sources" not in j.name]
+    if not jars:
+        return "Build lyckades men ingen jar hittades i build/libs/."
+    jar = max(jars, key=lambda j: j.stat().st_mtime)
+    dest = Path(SERVER_MODS_DIR) / jar.name
+    shutil.copy2(str(jar), str(dest))
 
-    if status_line and status_line.startswith("FAILURE:"):
-        reason = status_line[len("FAILURE:"):].strip()
-        return f"Kunde inte ändra **{modname}** efter upp till 5 försök.\n\n**Anledning:** {reason}"
+    # Step 5: Git checkpoint
+    await progress("Deploying and creating git checkpoint...")
+    git_msg = f"Checkpoint: {modname} changed by {discord_user}"
+    _out, git_err, git_rc = await _run_shell(
+        f'git add -A && git commit -m "{git_msg}"', cwd=REPO_DIR
+    )
+    if git_rc != 0:
+        await progress(f"Warning: git commit failed — {git_err.strip()[:200]}")
+    else:
+        _out, push_err, push_rc = await _run_shell("git push", cwd=REPO_DIR)
+        if push_rc != 0:
+            await progress(f"Warning: git push failed — {push_err.strip()[:200]}")
 
-    tail = "\n".join(last_lines)
     return (
-        f"Ändring av **{modname}** slutade med oväntat resultat.\n"
-        f"Sista output:\n```\n{tail}\n```"
+        f"Mod **{modname}** uppdaterad!\n"
+        f"Servern behöver startas om för att ladda ändringarna.\n"
+        f"Git checkpoint skapad och pushad: _{git_msg}_"
     )
 
 
