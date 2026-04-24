@@ -43,7 +43,7 @@ public final class RankedSmpRankActions {
 
         RankDefinition def = RankDefinition.forTier(tier);
         applyMaxHealth(player, def.computeMaxHealth());
-        dropExcess(player, def.hasExtraInventory() ? def.actualExtraSlots() : 0);
+        dropExcess(player, def.hasExtraInventory() ? def.extraSlots() : 0);
     }
 
     /** Sets up scoreboard team so rank prefix appears in nametag and tab list. */

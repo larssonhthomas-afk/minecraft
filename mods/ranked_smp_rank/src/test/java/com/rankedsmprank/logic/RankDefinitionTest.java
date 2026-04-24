@@ -63,7 +63,7 @@ class RankDefinitionTest {
         assertEquals(9, RankDefinition.forTier(5).extraSlots());
         assertEquals(14, RankDefinition.forTier(4).extraSlots());
         assertEquals(18, RankDefinition.forTier(3).extraSlots());
-        assertEquals(24, RankDefinition.forTier(2).extraSlots());
+        assertEquals(23, RankDefinition.forTier(2).extraSlots());
         assertEquals(27, RankDefinition.forTier(1).extraSlots());
     }
 
@@ -73,7 +73,7 @@ class RankDefinitionTest {
         assertEquals(1, RankDefinition.forTier(5).extraRows()); // 9 slots → 1 row
         assertEquals(2, RankDefinition.forTier(4).extraRows()); // 14 slots → 2 rows
         assertEquals(2, RankDefinition.forTier(3).extraRows()); // 18 slots → 2 rows
-        assertEquals(3, RankDefinition.forTier(2).extraRows()); // 24 slots → 3 rows
+        assertEquals(3, RankDefinition.forTier(2).extraRows()); // 23 slots → 3 rows
         assertEquals(3, RankDefinition.forTier(1).extraRows()); // 27 slots → 3 rows
     }
 
@@ -83,6 +83,16 @@ class RankDefinitionTest {
             assertEquals(0, d.actualExtraSlots() % 9,
                     "Tier " + d.tier() + " actualExtraSlots not multiple of 9");
         }
+    }
+
+    @Test
+    void barrierSlotsPerRank() {
+        assertEquals(0, RankDefinition.forTier(9).barrierSlots());
+        assertEquals(0, RankDefinition.forTier(5).barrierSlots()); // 9 usable → 0 barriers
+        assertEquals(4, RankDefinition.forTier(4).barrierSlots()); // 14 usable → 4 barriers
+        assertEquals(0, RankDefinition.forTier(3).barrierSlots()); // 18 usable → 0 barriers
+        assertEquals(4, RankDefinition.forTier(2).barrierSlots()); // 23 usable → 4 barriers
+        assertEquals(0, RankDefinition.forTier(1).barrierSlots()); // 27 usable → 0 barriers
     }
 
     @Test

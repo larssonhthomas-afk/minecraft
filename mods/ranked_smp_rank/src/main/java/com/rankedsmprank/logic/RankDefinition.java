@@ -16,7 +16,7 @@ public record RankDefinition(
 
     public static final List<RankDefinition> ALL = List.of(
             new RankDefinition(1, 30.0f, 2.00f, 2.00f, 27),
-            new RankDefinition(2, 28.0f, 1.80f, 1.80f, 24),
+            new RankDefinition(2, 28.0f, 1.80f, 1.80f, 23),
             new RankDefinition(3, 27.0f, 1.65f, 1.65f, 18),
             new RankDefinition(4, 26.0f, 1.50f, 1.50f, 14),
             new RankDefinition(5, 25.0f, 1.35f, 1.35f,  9),
@@ -47,6 +47,11 @@ public record RankDefinition(
     /** Actual slot count used in the chest GUI (always a multiple of 9). */
     public int actualExtraSlots() {
         return extraRows() * 9;
+    }
+
+    /** Number of barrier (locked) slots shown in the GUI to pad the last row. */
+    public int barrierSlots() {
+        return actualExtraSlots() - extraSlots;
     }
 
     public boolean hasExtraInventory() {

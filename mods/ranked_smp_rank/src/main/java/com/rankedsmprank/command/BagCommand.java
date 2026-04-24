@@ -49,9 +49,8 @@ public final class BagCommand {
         }
 
         int rows = def.extraRows();
-        int slots = def.actualExtraSlots();
         SimpleInventory inv = RankedSmpRankMod.extraInventoryManager()
-                .getOrCreate(player.getUuid(), slots);
+                .getOrCreate(player.getUuid(), def.extraSlots());
 
         ScreenHandlerType<GenericContainerScreenHandler> type = switch (rows) {
             case 1 -> ScreenHandlerType.GENERIC_9X1;

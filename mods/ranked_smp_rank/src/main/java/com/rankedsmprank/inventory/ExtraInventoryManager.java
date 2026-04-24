@@ -10,25 +10,30 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Manages per-player extra inventory slots in memory.
+ * Manages per-player extra inventory (BagInventory) in memory.
+ * Sized by usable-slot count; barrier padding is added automatically to the last row.
  * Inventories persist for the lifetime of the server session.
  */
 public class ExtraInventoryManager {
 
-    private final Map<UUID, SimpleInventory> inventories = new HashMap<>();
+    private final Map<UUID, BagInventory> inventories = new HashMap<>();
 
     /**
-     * Returns the player's extra inventory, creating one if needed.
-     * Only grows the inventory — never shrinks. Use resizeAndGetDrops for rank changes.
+     * Returns the player's extra inventory, creating or reshaping it to match
+     * the given usable-slot count. Copies carryover items from any existing inventory.
      */
-    public synchronized SimpleInventory getOrCreate(UUID playerId, int slots) {
-        SimpleInventory existing = inventories.get(playerId);
-        if (existing != null && existing.size() >= slots) {
+    public synchronized BagInventory getOrCreate(UUID playerId, int usableSlots) {
+        int total = ((usableSlots + 8) / 9) * 9;
+
+        BagInventory existing = inventories.get(playerId);
+        if (existing != null && existing.size() == total && existing.getUsableSlots() == usableSlots) {
             return existing;
         }
-        SimpleInventory fresh = new SimpleInventory(Math.max(slots, 9));
+
+        BagInventory fresh = new BagInventory(total, usableSlots);
         if (existing != null) {
-            for (int i = 0; i < Math.min(existing.size(), fresh.size()); i++) {
+            int copy = Math.min(existing.getUsableSlots(), usableSlots);
+            for (int i = 0; i < copy; i++) {
                 fresh.setStack(i, existing.getStack(i));
             }
         }
@@ -37,44 +42,37 @@ public class ExtraInventoryManager {
     }
 
     /**
-     * Resizes the inventory to newSlots. Returns items that no longer fit as drops.
-     * If newSlots <= 0, removes the inventory entirely and returns all items.
+     * Resizes the inventory to newUsableSlots. Returns usable items that no longer fit as drops.
+     * If newUsableSlots <= 0, removes the inventory entirely and returns all usable items.
      */
-    public synchronized List<ItemStack> resizeAndGetDrops(UUID playerId, int newSlots) {
-        SimpleInventory existing = inventories.get(playerId);
+    public synchronized List<ItemStack> resizeAndGetDrops(UUID playerId, int newUsableSlots) {
+        BagInventory existing = inventories.get(playerId);
 
-        if (newSlots <= 0) {
+        if (newUsableSlots <= 0) {
             inventories.remove(playerId);
-            if (existing == null) return List.of();
-            List<ItemStack> drops = new ArrayList<>();
-            for (int i = 0; i < existing.size(); i++) {
-                ItemStack stack = existing.getStack(i);
-                if (!stack.isEmpty()) drops.add(stack);
-            }
-            return drops;
+            return existing == null ? List.of() : extractUsableItems(existing);
         }
 
-        int actualSlots = ((newSlots + 8) / 9) * 9;
+        int newTotal = ((newUsableSlots + 8) / 9) * 9;
 
         if (existing == null) {
-            inventories.put(playerId, new SimpleInventory(actualSlots));
+            inventories.put(playerId, new BagInventory(newTotal, newUsableSlots));
             return List.of();
         }
 
-        if (existing.size() == actualSlots) {
+        if (existing.size() == newTotal && existing.getUsableSlots() == newUsableSlots) {
             return List.of();
         }
 
+        int copy = Math.min(existing.getUsableSlots(), newUsableSlots);
         List<ItemStack> drops = new ArrayList<>();
-        if (existing.size() > actualSlots) {
-            for (int i = actualSlots; i < existing.size(); i++) {
-                ItemStack stack = existing.getStack(i);
-                if (!stack.isEmpty()) drops.add(stack);
-            }
+        for (int i = copy; i < existing.getUsableSlots(); i++) {
+            ItemStack stack = existing.getStack(i);
+            if (!stack.isEmpty()) drops.add(stack);
         }
 
-        SimpleInventory fresh = new SimpleInventory(actualSlots);
-        for (int i = 0; i < Math.min(actualSlots, existing.size()); i++) {
+        BagInventory fresh = new BagInventory(newTotal, newUsableSlots);
+        for (int i = 0; i < copy; i++) {
             fresh.setStack(i, existing.getStack(i));
         }
         inventories.put(playerId, fresh);
@@ -82,20 +80,23 @@ public class ExtraInventoryManager {
     }
 
     /**
-     * Removes the inventory entirely and returns all items it contained.
+     * Removes the inventory entirely and returns all usable items it contained (barriers excluded).
      */
     public synchronized List<ItemStack> clearAndGetItems(UUID playerId) {
-        SimpleInventory existing = inventories.remove(playerId);
-        if (existing == null) return List.of();
-        List<ItemStack> items = new ArrayList<>();
-        for (int i = 0; i < existing.size(); i++) {
-            ItemStack stack = existing.getStack(i);
-            if (!stack.isEmpty()) items.add(stack);
-        }
-        return items;
+        BagInventory existing = inventories.remove(playerId);
+        return existing == null ? List.of() : extractUsableItems(existing);
     }
 
     public synchronized void remove(UUID playerId) {
         inventories.remove(playerId);
+    }
+
+    private static List<ItemStack> extractUsableItems(BagInventory inv) {
+        List<ItemStack> items = new ArrayList<>();
+        for (int i = 0; i < inv.getUsableSlots(); i++) {
+            ItemStack stack = inv.getStack(i);
+            if (!stack.isEmpty()) items.add(stack);
+        }
+        return items;
     }
 }

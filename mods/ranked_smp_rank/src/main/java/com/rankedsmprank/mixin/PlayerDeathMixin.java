@@ -4,7 +4,9 @@ import com.rankedsmprank.RankedSmpRankActions;
 import com.rankedsmprank.RankedSmpRankMod;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.GameRules;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,9 +20,12 @@ public abstract class PlayerDeathMixin {
     @Inject(method = "onDeath(Lnet/minecraft/entity/damage/DamageSource;)V", at = @At("HEAD"))
     private void ranked$onDeath(DamageSource source, CallbackInfo ci) {
         ServerPlayerEntity victim = (ServerPlayerEntity) (Object) this;
+        MinecraftServer server = victim.getServer();
+        if (server != null && !server.getGameRules().getBoolean(GameRules.KEEP_INVENTORY)) {
+            dropBagItems(victim);
+        }
         if (source.getAttacker() instanceof ServerPlayerEntity killer
                 && !killer.getUuid().equals(victim.getUuid())) {
-            dropBagItems(victim);
             RankedSmpRankActions.processPvPKill(killer, victim);
         }
     }

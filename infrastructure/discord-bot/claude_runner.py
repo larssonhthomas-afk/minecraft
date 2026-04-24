@@ -325,6 +325,12 @@ async def analyze_change_request(modname: str, description: str) -> dict:
 
     prompt = f"""You are analyzing a request to modify an existing Minecraft Fabric mod.
 
+## CRITICAL — respond with text only
+- DO NOT call any tools (no Read, Bash, Edit, Write, Grep, Glob, etc.).
+- DO NOT read files from disk — the complete source is provided below.
+- DO NOT run any command.
+- Your entire response must be a single JSON object. Nothing else.
+
 Mod directory: {mod_dir}
 Change request: {description}
 
@@ -371,6 +377,13 @@ def _ask_claude_for_edits(source_files: str, description: str, qa_section: str, 
         if error_output else ""
     )
     return f"""You are a Minecraft Fabric 1.21.4 mod developer.
+
+## CRITICAL — respond with text only
+- DO NOT call any tools (no Read, Bash, Edit, Write, Grep, Glob, etc.).
+- DO NOT read files from disk — the complete source is provided below.
+- DO NOT run gradle, tests, or any command.
+- DO NOT explore, verify, or double-check. Just answer.
+- Your entire response must be a single JSON object. Nothing else.
 
 ## Existing source files
 {source_files}
@@ -461,7 +474,7 @@ async def change_mod(
     await progress("Claude is planning and writing changes...")
     source = _read_source_files(Path(mod_dir))
     prompt = _ask_claude_for_edits(source, description, qa_section)
-    stdout, _stderr, _rc = await _run_claude(prompt, cwd=REPO_DIR, timeout=120)
+    stdout, _stderr, _rc = await _run_claude(prompt, cwd=REPO_DIR, timeout=900)
     written = apply_edits(stdout, Path(mod_dir))
     if written == 0:
         return f"Claude returnerade inga filändringar.\nOutput:\n```\n{stdout[-500:]}\n```"
@@ -484,7 +497,7 @@ async def change_mod(
         await progress(f"Tests failed — asking Claude to fix (attempt {attempt})...")
         source = _read_source_files(Path(mod_dir))
         fix_prompt = _ask_claude_for_edits(source, description, qa_section, combined[-2000:])
-        stdout, _stderr, _rc = await _run_claude(fix_prompt, cwd=REPO_DIR, timeout=120)
+        stdout, _stderr, _rc = await _run_claude(fix_prompt, cwd=REPO_DIR, timeout=900)
         apply_edits(stdout, Path(mod_dir))
 
     # Step 3: Build
