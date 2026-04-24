@@ -1,12 +1,16 @@
 package com.rankedsmprank.mixin;
 
 import com.rankedsmprank.RankedSmpRankActions;
+import com.rankedsmprank.RankedSmpRankMod;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.List;
 
 @Mixin(ServerPlayerEntity.class)
 public abstract class PlayerDeathMixin {
@@ -16,7 +20,17 @@ public abstract class PlayerDeathMixin {
         ServerPlayerEntity victim = (ServerPlayerEntity) (Object) this;
         if (source.getAttacker() instanceof ServerPlayerEntity killer
                 && !killer.getUuid().equals(victim.getUuid())) {
+            dropBagItems(victim);
             RankedSmpRankActions.processPvPKill(killer, victim);
+        }
+    }
+
+    private static void dropBagItems(ServerPlayerEntity player) {
+        var invManager = RankedSmpRankMod.extraInventoryManager();
+        if (invManager == null) return;
+        List<ItemStack> items = invManager.clearAndGetItems(player.getUuid());
+        for (ItemStack stack : items) {
+            player.dropItem(stack, true, false);
         }
     }
 }

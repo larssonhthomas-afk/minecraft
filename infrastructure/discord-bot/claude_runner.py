@@ -333,7 +333,7 @@ Rules:
 - "build?" is ALWAYS the last question, never omitted.
 - Max 3 questions total (plan + up to 1 clarifier + build?).
 """
-    stdout, _stderr, _rc = await _run_claude(prompt, timeout=120)
+    stdout, _stderr, _rc = await _run_claude(prompt, timeout=600)
     json_match = re.search(r"\{.*\}", stdout, re.DOTALL)
     if json_match:
         try:

@@ -6,8 +6,7 @@
   "server": [
     "PlayerDeathMixin",
     "StatusEffectMixin",
-    "ExperienceMixin",
-    "PlayerDisplayNameMixin"
+    "ExperienceMixin"
   ],
   "injectors": {
     "defaultRequire": 1

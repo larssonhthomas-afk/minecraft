@@ -1,14 +1,20 @@
 package com.rankedsmprank;
 
+import com.rankedsmprank.inventory.ExtraInventoryManager;
 import com.rankedsmprank.logic.RankDefinition;
 import com.rankedsmprank.logic.RankManager;
 import com.rankedsmprank.persistence.RankDataStore;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.item.ItemStack;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,18 +26,67 @@ public final class RankedSmpRankActions {
 
     private RankedSmpRankActions() {}
 
-    /** Apply the player's stored rank (health, name update) on login or rank change. */
+    /** Apply the player's stored rank (health, nametag, tab list, inventory) on login or rank change. */
     public static void applyRankToPlayer(ServerPlayerEntity player, RankDataStore store) {
         if (store == null) return;
         store.setPlayerName(player.getUuid(), player.getName().getString());
 
         int tier = store.getTier(player.getUuid());
+
+        applyRankDisplay(player, tier);
+
         if (!RankDefinition.isValidTier(tier)) {
             applyMaxHealth(player, 20.0f);
+            dropExcess(player, 0);
             return;
         }
+
         RankDefinition def = RankDefinition.forTier(tier);
         applyMaxHealth(player, def.computeMaxHealth());
+        dropExcess(player, def.hasExtraInventory() ? def.actualExtraSlots() : 0);
+    }
+
+    /** Sets up scoreboard team so rank prefix appears in nametag and tab list. */
+    private static void applyRankDisplay(ServerPlayerEntity player, int tier) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        Scoreboard scoreboard = server.getScoreboard();
+        String playerName = player.getName().getString();
+
+        String teamName;
+        Text prefix;
+        if (RankDefinition.isValidTier(tier)) {
+            teamName = "ranked_r" + tier;
+            prefix = Text.literal("[R" + tier + "] ").formatted(Formatting.GOLD);
+        } else {
+            teamName = "ranked_unranked";
+            prefix = Text.literal("[Unranked] ").formatted(Formatting.GRAY);
+        }
+
+        Team team = scoreboard.getTeam(teamName);
+        if (team == null) {
+            team = scoreboard.addTeam(teamName);
+        }
+        team.setPrefix(prefix);
+
+        Team currentTeam = scoreboard.getScoreHolderTeam(playerName);
+        if (currentTeam != null && !currentTeam.getName().equals(teamName)) {
+            scoreboard.removeScoreHolderFromTeam(playerName, currentTeam);
+            currentTeam = null;
+        }
+        if (currentTeam == null) {
+            scoreboard.addScoreHolderToTeam(playerName, team);
+        }
+    }
+
+    /** Resize the player's bag to newSlots, dropping any overflow at their feet. */
+    private static void dropExcess(ServerPlayerEntity player, int newSlots) {
+        ExtraInventoryManager invManager = RankedSmpRankMod.extraInventoryManager();
+        if (invManager == null) return;
+        List<ItemStack> drops = invManager.resizeAndGetDrops(player.getUuid(), newSlots);
+        for (ItemStack stack : drops) {
+            player.dropItem(stack, false, false);
+        }
     }
 
     /** Handle a PvP kill: swap ranks if applicable. */
