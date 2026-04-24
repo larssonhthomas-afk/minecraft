@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ranked_smp_rank",
+  "version": "${version}",
+  "name": "Ranked SMP Rank",
+  "description": "Rank system with health, potion duration, XP buffs and extra inventory for Minecraft SMP.",
+  "authors": ["RankedSMP Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.rankedsmprank.RankedSmpRankMod"]
+  },
+  "mixins": [
+    "ranked_smp_rank.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

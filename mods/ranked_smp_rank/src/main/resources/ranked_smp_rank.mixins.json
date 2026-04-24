@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.rankedsmprank.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "server": [
+    "PlayerDeathMixin",
+    "StatusEffectMixin",
+    "ExperienceMixin",
+    "PlayerDisplayNameMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
