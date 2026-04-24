@@ -38,6 +38,7 @@ async def _run_claude(prompt: str, cwd: str = REPO_DIR, timeout: int = 1200) -> 
     proc = await asyncio.create_subprocess_exec(
         "claude", "--dangerously-skip-permissions", "-p", prompt,
         cwd=cwd,
+        stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         env=env,
