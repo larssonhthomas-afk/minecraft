@@ -362,8 +362,8 @@ Rules:
 
 def _ask_claude_for_edits(source_files: str, description: str, qa_section: str, error_output: str = "") -> str:
     """
-    Call claude -p asking for file edits as JSON (no tool calls).
-    Returns raw stdout from the process.
+    Ask claude -p for search/replace instructions (not full file contents).
+    Small output → fast generation.
     """
     error_section = (
         f"\n\n## Test failure output — fix these errors\n```\n{error_output}\n```"
@@ -378,16 +378,29 @@ def _ask_claude_for_edits(source_files: str, description: str, qa_section: str, 
 {description}{qa_section}{error_section}
 
 ## Task
-Output the COMPLETE new contents of every file that needs to change.
+Implement the change request. Output ONLY the minimal edits needed as JSON.
 Preserve the existing architecture:
 - Pure logic stays in logic/* (no Minecraft imports)
 - Thin Mixin wrappers stay in mixin/*
 - Update or add JUnit 5 tests for any changed logic
 
+For EXISTING files: use "replacements" — list of exact search/replace pairs.
+  Each "old" string must be unique within the file (include enough context lines).
+For NEW files only: use "content" with the full file content.
+
 Output ONLY valid JSON, no markdown, no code fences:
 {{
   "files": [
-    {{"path": "src/main/java/com/example/Foo.java", "content": "package com.example;\\n..."}}
+    {{
+      "path": "src/main/java/com/example/Foo.java",
+      "replacements": [
+        {{"old": "exact string to find", "new": "replacement string"}}
+      ]
+    }},
+    {{
+      "path": "src/main/java/com/example/NewFile.java",
+      "content": "package com.example;\\n..."
+    }}
   ]
 }}
 """
@@ -420,7 +433,7 @@ async def change_mod(
         qa_section = "\n\n## Clarifications from the user\n" + "\n\n".join(pairs)
 
     def apply_edits(stdout: str, base: Path) -> int:
-        """Parse JSON file list from stdout and write to disk. Returns number of files written."""
+        """Parse JSON edits from stdout and apply to disk. Returns number of files touched."""
         match = re.search(r"\{.*\}", stdout, re.DOTALL)
         if not match:
             return 0
@@ -432,8 +445,15 @@ async def change_mod(
         for entry in data.get("files", []):
             path = base / entry["path"]
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(entry["content"], encoding="utf-8")
-            count += 1
+            if "content" in entry:
+                path.write_text(entry["content"], encoding="utf-8")
+                count += 1
+            elif "replacements" in entry and path.exists():
+                text = path.read_text(encoding="utf-8")
+                for rep in entry["replacements"]:
+                    text = text.replace(rep["old"], rep["new"], 1)
+                path.write_text(text, encoding="utf-8")
+                count += 1
         return count
 
     # Step 1: Ask Claude for edits (text output only — no subprocess tool calls)
