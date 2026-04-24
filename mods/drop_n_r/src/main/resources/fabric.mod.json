@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "drop_n_r",
+  "version": "${version}",
+  "name": "Drop 'n' R",
+  "description": "Släpper offrets player head på PvP-kill, samt unika nycklar när Ender Dragon, Warden eller Wither dödas.",
+  "authors": ["Drop 'n' R Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.dropnr.DropNRMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}
