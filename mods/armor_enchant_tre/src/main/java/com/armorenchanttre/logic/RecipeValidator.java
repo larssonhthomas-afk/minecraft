@@ -13,7 +13,7 @@ import java.util.List;
  */
 public final class RecipeValidator {
 
-    public static final String BOOK_ITEM_ID = "minecraft:book";
+    public static final String BOOK_ITEM_ID = "minecraft:enchanted_book";
     public static final String KEY_ITEM_ID = "minecraft:firework_star";
     public static final String PLAYER_HEAD_ITEM_ID = "minecraft:player_head";
 

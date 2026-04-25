@@ -1,0 +1,20 @@
+[Unit]
+Description=Minecraft Discord Bot
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/minecraft-dev/minecraft/infrastructure/discord-bot
+ExecStart=/usr/bin/python3 /opt/minecraft-dev/minecraft/infrastructure/discord-bot/bot.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=minecraft-discord-bot
+
+[Install]
+WantedBy=multi-user.target

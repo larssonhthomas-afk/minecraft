@@ -13,8 +13,10 @@ Commands (all respond in threads, not the main channel):
 """
 
 import asyncio
+import fcntl
 import logging
 import os
+import sys
 
 import discord
 from discord.ext import commands, tasks
@@ -451,5 +453,23 @@ async def cmd_help(ctx: commands.Context):
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
+LOCK_PATH = "/tmp/minecraft-discord-bot.lock"
+
+
+def _acquire_singleton_lock():
+    fd = open(LOCK_PATH, "w")
+    try:
+        fcntl.flock(fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        sys.stderr.write(
+            f"Another bot instance is already running (lock {LOCK_PATH}). Exiting.\n"
+        )
+        sys.exit(1)
+    fd.write(str(os.getpid()))
+    fd.flush()
+    return fd
+
+
 if __name__ == "__main__":
+    _lock = _acquire_singleton_lock()
     bot.run(DISCORD_TOKEN)

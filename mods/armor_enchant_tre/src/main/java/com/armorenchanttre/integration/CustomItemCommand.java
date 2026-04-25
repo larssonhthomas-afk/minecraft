@@ -17,9 +17,14 @@ import net.minecraft.text.Text;
  */
 public final class CustomItemCommand {
 
+    private static final String[] TYPES = {
+            "immunity", "endurance", "extinguish",
+            "dragon_key", "warden_key", "wither_key",
+            "neutral_player_head"
+    };
+
     private static final SuggestionProvider<ServerCommandSource> TYPE_SUGGESTIONS =
-            (ctx, builder) -> CommandSource.suggestMatching(
-                    new String[]{"immunity", "endurance", "extinguish"}, builder);
+            (ctx, builder) -> CommandSource.suggestMatching(TYPES, builder);
 
     private CustomItemCommand() {}
 
@@ -33,19 +38,32 @@ public final class CustomItemCommand {
                                         .executes(ctx -> {
                                             ServerCommandSource source = ctx.getSource();
                                             String typeArg = StringArgumentType.getString(ctx, "type");
-                                            EnchantmentType type = EnchantmentType.fromId(typeArg);
-                                            if (type == null) {
-                                                source.sendError(Text.literal("Okänd enchantment-typ: " + typeArg
-                                                        + " (giltiga: immunity, endurance, extinguish)"));
+                                            ItemStack item = createCustomItem(typeArg);
+                                            if (item == null) {
+                                                source.sendError(Text.literal("Okänd custom-item: " + typeArg
+                                                        + " (giltiga: " + String.join(", ", TYPES) + ")"));
                                                 return 0;
                                             }
                                             ServerPlayerEntity player = source.getPlayerOrThrow();
-                                            ItemStack book = BookCraftingMatcher.createEnchantedBook(type);
-                                            player.getInventory().offerOrDrop(book);
-                                            source.sendFeedback(() -> Text.literal("Gav "
-                                                    + type.bookName() + "-bok till "
-                                                    + player.getName().getString()), true);
+                                            String label = item.getName().getString();
+                                            player.getInventory().offerOrDrop(item);
+                                            source.sendFeedback(() -> Text.literal("Gav " + label
+                                                    + " till " + player.getName().getString()), true);
                                             return 1;
                                         })))));
+    }
+
+    private static ItemStack createCustomItem(String typeArg) {
+        EnchantmentType enchant = EnchantmentType.fromId(typeArg);
+        if (enchant != null) {
+            return BookCraftingMatcher.createEnchantedBook(enchant);
+        }
+        return switch (typeArg) {
+            case "dragon_key" -> BookCraftingMatcher.createKey(EnchantmentType.IMMUNITY);
+            case "warden_key" -> BookCraftingMatcher.createKey(EnchantmentType.ENDURANCE);
+            case "wither_key" -> BookCraftingMatcher.createKey(EnchantmentType.EXTINGUISH);
+            case "neutral_player_head" -> BookCraftingMatcher.createNeutralPlayerHead();
+            default -> null;
+        };
     }
 }
