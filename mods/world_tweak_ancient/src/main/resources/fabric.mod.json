@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "world_tweak_ancient",
+  "version": "${version}",
+  "name": "World Tweak Ancient",
+  "description": "Gör Ancient Debris ovanligare, tar bort Ancient Debris/Netherite Ingot från Bastion-loot, blockerar gold blocks i Bastions, blockerar Zombified Piglin-spawn och Drowned-tridenter.",
+  "authors": ["WorldTweakAncient Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.worldtweakancient.WorldTweakAncientMod"]
+  },
+  "mixins": [
+    "world_tweak_ancient.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

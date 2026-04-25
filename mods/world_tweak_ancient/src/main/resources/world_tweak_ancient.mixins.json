@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.worldtweakancient.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "server": [
+    "ChunkRegionGoldBlockMixin",
+    "DrownedEntityMixin",
+    "ServerWorldSpawnEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
