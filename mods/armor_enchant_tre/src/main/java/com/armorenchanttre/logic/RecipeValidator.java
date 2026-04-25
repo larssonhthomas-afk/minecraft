@@ -17,57 +17,35 @@ public final class RecipeValidator {
     public static final String KEY_ITEM_ID = "minecraft:firework_star";
     public static final String PLAYER_HEAD_ITEM_ID = "minecraft:player_head";
 
+    public static final int KEY_SLOT = 1;
+    public static final int HEAD_SLOT = 4;
+    public static final int GRID_SIZE = 9;
+
     private RecipeValidator() {}
 
-    public static EnchantmentType validate(ItemView book, ItemView key, ItemView head) {
-        if (book == null || key == null || head == null) return null;
-
-        EnchantmentType byBook = readBookType(book);
-        if (byBook == null) return null;
-
+    public static EnchantmentType validate(ItemView key, ItemView head) {
+        if (key == null || head == null) return null;
         EnchantmentType byKey = readKeyType(key);
         if (byKey == null) return null;
-
-        if (byBook != byKey) return null;
-
         if (!isValidPlayerHead(head)) return null;
-
-        return byBook;
+        return byKey;
     }
 
     /**
-     * Sorterar in stackarna i bok-/nyckel-/huvud-slot baserat på itemId och kör validate().
-     * En redan enchantad bok hamnar i bok-sloten och avvisas sedan av validate()
-     * (eftersom den har en marker), så crafting blockeras tyst i det fallet.
+     * Validerar 3x3-grid med strikta slot-positioner: nyckel i top-mid (index 1)
+     * och spelarhuvud i center (index 4). Alla andra slottar måste vara tomma.
+     * Den oenchantade boken är inte längre en ingrediens — själva nyckeln avgör
+     * vilken EnchantmentType som ska genereras.
      */
     public static EnchantmentType validateGrid(List<ItemView> stacks) {
         if (stacks == null) return null;
-        ItemView book = null;
-        ItemView key = null;
-        ItemView head = null;
-        for (ItemView v : stacks) {
-            if (v == null || v.isEmpty()) continue;
-            if (BOOK_ITEM_ID.equals(v.itemId())) {
-                if (book != null) return null;
-                book = v;
-            } else if (KEY_ITEM_ID.equals(v.itemId())) {
-                if (key != null) return null;
-                key = v;
-            } else if (PLAYER_HEAD_ITEM_ID.equals(v.itemId())) {
-                if (head != null) return null;
-                head = v;
-            } else {
-                return null;
-            }
+        if (stacks.size() != GRID_SIZE) return null;
+        for (int i = 0; i < GRID_SIZE; i++) {
+            if (i == KEY_SLOT || i == HEAD_SLOT) continue;
+            ItemView v = stacks.get(i);
+            if (v != null && !v.isEmpty()) return null;
         }
-        if (book == null || key == null || head == null) return null;
-        return validate(book, key, head);
-    }
-
-    public static EnchantmentType readBookType(ItemView book) {
-        if (book == null || !BOOK_ITEM_ID.equals(book.itemId())) return null;
-        if (book.enchantMarkerId() != null) return null;
-        return EnchantmentType.fromBookName(book.customName());
+        return validate(stacks.get(KEY_SLOT), stacks.get(HEAD_SLOT));
     }
 
     public static EnchantmentType readKeyType(ItemView key) {

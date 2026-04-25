@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,13 @@ public final class BookCraftingMatcher {
         EnchantmentType type = RecipeValidator.validateGrid(views);
         if (type == null) return null;
 
+        return createEnchantedBook(type);
+    }
+
+    public static ItemStack createEnchantedBook(EnchantmentType type) {
         ItemStack result = new ItemStack(Items.BOOK);
-        result.set(DataComponentTypes.CUSTOM_NAME, Text.literal(type.bookName()));
+        result.set(DataComponentTypes.CUSTOM_NAME,
+                Text.literal(type.bookName()).formatted(Formatting.BLUE));
         NbtCompound nbt = new NbtCompound();
         nbt.putString(ItemMarker.NBT_KEY, type.id());
         result.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));

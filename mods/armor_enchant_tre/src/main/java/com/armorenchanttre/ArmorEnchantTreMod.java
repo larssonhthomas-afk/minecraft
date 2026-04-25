@@ -1,6 +1,7 @@
 package com.armorenchanttre;
 
 import com.armorenchanttre.integration.ArmorEffectApplier;
+import com.armorenchanttre.integration.CustomItemCommand;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ public final class ArmorEnchantTreMod implements ModInitializer {
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(ArmorEffectApplier::onServerTick);
+        CustomItemCommand.register();
         LOGGER.info("armor_enchant_tre initierad: Immunity (boots), Endurance (leggings), Extinguish (leggings)");
     }
 }

@@ -2,15 +2,13 @@ package com.armorenchanttre.logic;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class RecipeValidatorTest {
-
-    private static ItemView book(String name) {
-        return new ItemView(RecipeValidator.BOOK_ITEM_ID, name, false, null);
-    }
 
     private static ItemView key(String name) {
         return new ItemView(RecipeValidator.KEY_ITEM_ID, name, false, null);
@@ -20,127 +18,76 @@ class RecipeValidatorTest {
         return new ItemView(RecipeValidator.PLAYER_HEAD_ITEM_ID, null, withProfile, null);
     }
 
+    private static List<ItemView> emptyGrid() {
+        List<ItemView> g = new ArrayList<>();
+        for (int i = 0; i < RecipeValidator.GRID_SIZE; i++) g.add(ItemView.empty());
+        return g;
+    }
+
+    private static List<ItemView> gridWith(ItemView keyStack, ItemView headStack) {
+        List<ItemView> g = emptyGrid();
+        g.set(RecipeValidator.KEY_SLOT, keyStack);
+        g.set(RecipeValidator.HEAD_SLOT, headStack);
+        return g;
+    }
+
+    @Test
+    void slotConstants_areTopMiddleAndCenter() {
+        assertEquals(1, RecipeValidator.KEY_SLOT, "Nyckel ska ligga på top-mid (index 1, 0-indexed).");
+        assertEquals(4, RecipeValidator.HEAD_SLOT, "Spelarhuvud ska ligga i center (index 4, 0-indexed).");
+        assertEquals(9, RecipeValidator.GRID_SIZE);
+    }
+
     @Test
     void validate_immunityRecipe_returnsImmunity() {
-        EnchantmentType result = RecipeValidator.validate(
-                book("Immunity"),
-                key("Dragon Key"),
-                playerHead(true));
-        assertSame(EnchantmentType.IMMUNITY, result);
+        assertSame(EnchantmentType.IMMUNITY,
+                RecipeValidator.validate(key("Dragon Key"), playerHead(true)));
     }
 
     @Test
     void validate_enduranceRecipe_returnsEndurance() {
-        EnchantmentType result = RecipeValidator.validate(
-                book("Endurance"),
-                key("Warden Key"),
-                playerHead(true));
-        assertSame(EnchantmentType.ENDURANCE, result);
+        assertSame(EnchantmentType.ENDURANCE,
+                RecipeValidator.validate(key("Warden Key"), playerHead(true)));
     }
 
     @Test
     void validate_extinguishRecipe_returnsExtinguish() {
-        EnchantmentType result = RecipeValidator.validate(
-                book("Extinguish"),
-                key("Wither Key"),
-                playerHead(true));
-        assertSame(EnchantmentType.EXTINGUISH, result);
-    }
-
-    @Test
-    void validate_mismatchedBookAndKey_returnsNull() {
-        assertNull(RecipeValidator.validate(
-                book("Immunity"),
-                key("Warden Key"),
-                playerHead(true)));
-        assertNull(RecipeValidator.validate(
-                book("Endurance"),
-                key("Wither Key"),
-                playerHead(true)));
+        assertSame(EnchantmentType.EXTINGUISH,
+                RecipeValidator.validate(key("Wither Key"), playerHead(true)));
     }
 
     @Test
     void validate_playerHeadWithoutProfile_isRejected() {
-        assertNull(RecipeValidator.validate(
-                book("Immunity"),
-                key("Dragon Key"),
-                playerHead(false)),
+        assertNull(RecipeValidator.validate(key("Dragon Key"), playerHead(false)),
                 "Vanlig skull utan profil får inte godkännas — endast Drop Mod-huvuden.");
     }
 
     @Test
     void validate_keyWithoutCustomName_isRejected() {
         ItemView vanillaFireworkStar = new ItemView(RecipeValidator.KEY_ITEM_ID, null, false, null);
-        assertNull(RecipeValidator.validate(
-                book("Immunity"),
-                vanillaFireworkStar,
-                playerHead(true)),
+        assertNull(RecipeValidator.validate(vanillaFireworkStar, playerHead(true)),
                 "Vanlig firework_star utan rätt CUSTOM_NAME får inte godkännas.");
     }
 
     @Test
     void validate_keyWithWrongCustomName_isRejected() {
         ItemView fakeKey = new ItemView(RecipeValidator.KEY_ITEM_ID, "Fake Key", false, null);
-        assertNull(RecipeValidator.validate(
-                book("Immunity"),
-                fakeKey,
-                playerHead(true)));
-    }
-
-    @Test
-    void validate_bookWithWrongName_isRejected() {
-        assertNull(RecipeValidator.validate(
-                book("immunity"),
-                key("Dragon Key"),
-                playerHead(true)),
-                "Case-sensitive: 'immunity' != 'Immunity'");
-    }
-
-    @Test
-    void validate_bookWithoutName_isRejected() {
-        assertNull(RecipeValidator.validate(
-                book(null),
-                key("Dragon Key"),
-                playerHead(true)));
-    }
-
-    @Test
-    void validate_bookAlreadyEnchanted_isRejected() {
-        ItemView enchantedBook = new ItemView(RecipeValidator.BOOK_ITEM_ID, "Immunity", false, "immunity");
-        assertNull(RecipeValidator.validate(
-                enchantedBook,
-                key("Dragon Key"),
-                playerHead(true)),
-                "En bok som redan har vår marker får inte enchantas igen.");
+        assertNull(RecipeValidator.validate(fakeKey, playerHead(true)));
     }
 
     @Test
     void validate_wrongItemTypes_areRejected() {
-        ItemView paperPretendingToBeBook = new ItemView("minecraft:paper", "Immunity", false, null);
-        assertNull(RecipeValidator.validate(
-                paperPretendingToBeBook,
-                key("Dragon Key"),
-                playerHead(true)));
+        ItemView paperPretendingToBeKey = new ItemView("minecraft:paper", "Dragon Key", false, null);
+        assertNull(RecipeValidator.validate(paperPretendingToBeKey, playerHead(true)));
 
         ItemView skullInsteadOfHead = new ItemView("minecraft:wither_skeleton_skull", null, true, null);
-        assertNull(RecipeValidator.validate(
-                book("Immunity"),
-                key("Dragon Key"),
-                skullInsteadOfHead));
+        assertNull(RecipeValidator.validate(key("Dragon Key"), skullInsteadOfHead));
     }
 
     @Test
     void validate_nullInputs_returnsNull() {
-        assertNull(RecipeValidator.validate(null, key("Dragon Key"), playerHead(true)));
-        assertNull(RecipeValidator.validate(book("Immunity"), null, playerHead(true)));
-        assertNull(RecipeValidator.validate(book("Immunity"), key("Dragon Key"), null));
-    }
-
-    @Test
-    void readBookType_recognisesNamedBook() {
-        assertSame(EnchantmentType.IMMUNITY, RecipeValidator.readBookType(book("Immunity")));
-        assertSame(EnchantmentType.ENDURANCE, RecipeValidator.readBookType(book("Endurance")));
-        assertSame(EnchantmentType.EXTINGUISH, RecipeValidator.readBookType(book("Extinguish")));
+        assertNull(RecipeValidator.validate(null, playerHead(true)));
+        assertNull(RecipeValidator.validate(key("Dragon Key"), null));
     }
 
     @Test
@@ -158,73 +105,73 @@ class RecipeValidatorTest {
     }
 
     @Test
-    void validateGrid_unenchantedImmunityBookPlusKeyPlusHead_returnsImmunity() {
-        EnchantmentType result = RecipeValidator.validateGrid(List.of(
-                book("Immunity"),
-                key("Dragon Key"),
-                playerHead(true),
-                ItemView.empty(), ItemView.empty(), ItemView.empty(),
-                ItemView.empty(), ItemView.empty(), ItemView.empty()));
-        assertSame(EnchantmentType.IMMUNITY, result);
+    void validateGrid_immunityRecipe_returnsImmunity() {
+        assertSame(EnchantmentType.IMMUNITY, RecipeValidator.validateGrid(
+                gridWith(key("Dragon Key"), playerHead(true))));
     }
 
     @Test
-    void validateGrid_unenchantedEnduranceRecipe_returnsEndurance() {
-        EnchantmentType result = RecipeValidator.validateGrid(List.of(
-                book("Endurance"),
-                key("Warden Key"),
-                playerHead(true)));
-        assertSame(EnchantmentType.ENDURANCE, result);
+    void validateGrid_enduranceRecipe_returnsEndurance() {
+        assertSame(EnchantmentType.ENDURANCE, RecipeValidator.validateGrid(
+                gridWith(key("Warden Key"), playerHead(true))));
     }
 
     @Test
-    void validateGrid_unenchantedExtinguishRecipe_returnsExtinguish() {
-        EnchantmentType result = RecipeValidator.validateGrid(List.of(
-                book("Extinguish"),
-                key("Wither Key"),
-                playerHead(true)));
-        assertSame(EnchantmentType.EXTINGUISH, result);
+    void validateGrid_extinguishRecipe_returnsExtinguish() {
+        assertSame(EnchantmentType.EXTINGUISH, RecipeValidator.validateGrid(
+                gridWith(key("Wither Key"), playerHead(true))));
     }
 
     @Test
-    void validateGrid_alreadyEnchantedBook_returnsNull() {
-        ItemView enchantedBook = new ItemView(RecipeValidator.BOOK_ITEM_ID, "Immunity", false, "immunity");
-        EnchantmentType result = RecipeValidator.validateGrid(List.of(
-                enchantedBook,
-                key("Dragon Key"),
-                playerHead(true)));
-        assertNull(result, "En redan-enchantad bok i griden ska blockera crafting.");
+    void validateGrid_keyInWrongSlot_returnsNull() {
+        List<ItemView> grid = emptyGrid();
+        grid.set(0, key("Dragon Key"));
+        grid.set(RecipeValidator.HEAD_SLOT, playerHead(true));
+        assertNull(RecipeValidator.validateGrid(grid),
+                "Nyckel i fel slot får inte ge ett giltigt recept.");
     }
 
     @Test
-    void validateGrid_extraJunkItem_returnsNull() {
-        assertNull(RecipeValidator.validateGrid(List.of(
-                book("Immunity"),
-                key("Dragon Key"),
-                playerHead(true),
-                new ItemView("minecraft:stick", null, false, null))));
+    void validateGrid_headInWrongSlot_returnsNull() {
+        List<ItemView> grid = emptyGrid();
+        grid.set(RecipeValidator.KEY_SLOT, key("Dragon Key"));
+        grid.set(8, playerHead(true));
+        assertNull(RecipeValidator.validateGrid(grid),
+                "Spelarhuvud i fel slot får inte ge ett giltigt recept.");
     }
 
     @Test
-    void validateGrid_duplicateBooks_returnsNull() {
-        assertNull(RecipeValidator.validateGrid(List.of(
-                book("Immunity"),
-                book("Immunity"),
-                key("Dragon Key"),
-                playerHead(true))));
-    }
-
-    @Test
-    void validateGrid_missingHead_returnsNull() {
-        assertNull(RecipeValidator.validateGrid(List.of(
-                book("Immunity"),
-                key("Dragon Key"))));
+    void validateGrid_extraJunkInOtherSlot_returnsNull() {
+        List<ItemView> grid = gridWith(key("Dragon Key"), playerHead(true));
+        grid.set(0, new ItemView("minecraft:stick", null, false, null));
+        assertNull(RecipeValidator.validateGrid(grid),
+                "Övriga slottar måste vara tomma.");
     }
 
     @Test
     void validateGrid_emptyGrid_returnsNull() {
+        assertNull(RecipeValidator.validateGrid(emptyGrid()));
+    }
+
+    @Test
+    void validateGrid_missingHead_returnsNull() {
+        List<ItemView> grid = emptyGrid();
+        grid.set(RecipeValidator.KEY_SLOT, key("Dragon Key"));
+        assertNull(RecipeValidator.validateGrid(grid));
+    }
+
+    @Test
+    void validateGrid_missingKey_returnsNull() {
+        List<ItemView> grid = emptyGrid();
+        grid.set(RecipeValidator.HEAD_SLOT, playerHead(true));
+        assertNull(RecipeValidator.validateGrid(grid));
+    }
+
+    @Test
+    void validateGrid_wrongSize_returnsNull() {
+        assertNull(RecipeValidator.validateGrid(Collections.emptyList()));
         assertNull(RecipeValidator.validateGrid(List.of(
-                ItemView.empty(), ItemView.empty(), ItemView.empty())));
+                key("Dragon Key"), playerHead(true))));
     }
 
     @Test
