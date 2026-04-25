@@ -2,6 +2,8 @@ package com.armorenchanttre.logic;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class RecipeValidatorTest {
@@ -153,5 +155,80 @@ class RecipeValidatorTest {
         assertTrue(RecipeValidator.isValidPlayerHead(playerHead(true)));
         assertFalse(RecipeValidator.isValidPlayerHead(playerHead(false)));
         assertFalse(RecipeValidator.isValidPlayerHead(new ItemView("minecraft:player_head", "X", false, null)));
+    }
+
+    @Test
+    void validateGrid_unenchantedImmunityBookPlusKeyPlusHead_returnsImmunity() {
+        EnchantmentType result = RecipeValidator.validateGrid(List.of(
+                book("Immunity"),
+                key("Dragon Key"),
+                playerHead(true),
+                ItemView.empty(), ItemView.empty(), ItemView.empty(),
+                ItemView.empty(), ItemView.empty(), ItemView.empty()));
+        assertSame(EnchantmentType.IMMUNITY, result);
+    }
+
+    @Test
+    void validateGrid_unenchantedEnduranceRecipe_returnsEndurance() {
+        EnchantmentType result = RecipeValidator.validateGrid(List.of(
+                book("Endurance"),
+                key("Warden Key"),
+                playerHead(true)));
+        assertSame(EnchantmentType.ENDURANCE, result);
+    }
+
+    @Test
+    void validateGrid_unenchantedExtinguishRecipe_returnsExtinguish() {
+        EnchantmentType result = RecipeValidator.validateGrid(List.of(
+                book("Extinguish"),
+                key("Wither Key"),
+                playerHead(true)));
+        assertSame(EnchantmentType.EXTINGUISH, result);
+    }
+
+    @Test
+    void validateGrid_alreadyEnchantedBook_returnsNull() {
+        ItemView enchantedBook = new ItemView(RecipeValidator.BOOK_ITEM_ID, "Immunity", false, "immunity");
+        EnchantmentType result = RecipeValidator.validateGrid(List.of(
+                enchantedBook,
+                key("Dragon Key"),
+                playerHead(true)));
+        assertNull(result, "En redan-enchantad bok i griden ska blockera crafting.");
+    }
+
+    @Test
+    void validateGrid_extraJunkItem_returnsNull() {
+        assertNull(RecipeValidator.validateGrid(List.of(
+                book("Immunity"),
+                key("Dragon Key"),
+                playerHead(true),
+                new ItemView("minecraft:stick", null, false, null))));
+    }
+
+    @Test
+    void validateGrid_duplicateBooks_returnsNull() {
+        assertNull(RecipeValidator.validateGrid(List.of(
+                book("Immunity"),
+                book("Immunity"),
+                key("Dragon Key"),
+                playerHead(true))));
+    }
+
+    @Test
+    void validateGrid_missingHead_returnsNull() {
+        assertNull(RecipeValidator.validateGrid(List.of(
+                book("Immunity"),
+                key("Dragon Key"))));
+    }
+
+    @Test
+    void validateGrid_emptyGrid_returnsNull() {
+        assertNull(RecipeValidator.validateGrid(List.of(
+                ItemView.empty(), ItemView.empty(), ItemView.empty())));
+    }
+
+    @Test
+    void validateGrid_nullStacks_returnsNull() {
+        assertNull(RecipeValidator.validateGrid(null));
     }
 }

@@ -11,8 +11,12 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Letar i en crafting-grid (3x3) efter exakt en bok + en nyckel + ett spelarhuvud.
+ * Samlar alla stackar i crafting-griden som ItemViews och delegerar till
+ * RecipeValidator.validateGrid för sortering och validering.
  * Returnerar resulterande enchantad bok-stack om receptet matchar — annars null.
  */
 public final class BookCraftingMatcher {
@@ -22,35 +26,12 @@ public final class BookCraftingMatcher {
     public static ItemStack tryCraftEnchantedBook(RecipeInputInventory grid) {
         if (grid == null) return null;
 
-        ItemStack book = null;
-        ItemStack key = null;
-        ItemStack head = null;
-
+        List<ItemView> views = new ArrayList<>(grid.size());
         for (int i = 0; i < grid.size(); i++) {
-            ItemStack stack = grid.getStack(i);
-            if (stack.isEmpty()) continue;
-
-            ItemView v = ItemMarker.toView(stack);
-            if (RecipeValidator.readBookType(v) != null) {
-                if (book != null) return null;
-                book = stack;
-            } else if (RecipeValidator.readKeyType(v) != null) {
-                if (key != null) return null;
-                key = stack;
-            } else if (RecipeValidator.isValidPlayerHead(v)) {
-                if (head != null) return null;
-                head = stack;
-            } else {
-                return null;
-            }
+            views.add(ItemMarker.toView(grid.getStack(i)));
         }
 
-        if (book == null || key == null || head == null) return null;
-
-        EnchantmentType type = RecipeValidator.validate(
-                ItemMarker.toView(book),
-                ItemMarker.toView(key),
-                ItemMarker.toView(head));
+        EnchantmentType type = RecipeValidator.validateGrid(views);
         if (type == null) return null;
 
         ItemStack result = new ItemStack(Items.BOOK);
