@@ -102,6 +102,32 @@ def generate_mod_names(description: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Version helpers
+# ---------------------------------------------------------------------------
+
+def _read_mod_version(mod_dir: str | Path) -> str:
+    props = Path(mod_dir) / "gradle.properties"
+    for line in props.read_text().splitlines():
+        if line.startswith("mod_version="):
+            return line.split("=", 1)[1].strip()
+    return "1.0.0"
+
+
+def _bump_patch_version(version: str) -> str:
+    parts = version.split(".")
+    if len(parts) == 3 and parts[2].isdigit():
+        parts[2] = str(int(parts[2]) + 1)
+    return ".".join(parts)
+
+
+def _write_mod_version(mod_dir: str | Path, version: str):
+    props = Path(mod_dir) / "gradle.properties"
+    text = props.read_text()
+    text = re.sub(r"^mod_version=.*$", f"mod_version={version}", text, flags=re.MULTILINE)
+    props.write_text(text)
+
+
+# ---------------------------------------------------------------------------
 # Mod directory lookup
 # ---------------------------------------------------------------------------
 
@@ -500,8 +526,13 @@ async def change_mod(
         stdout, _stderr, _rc = await _run_claude(fix_prompt, cwd=REPO_DIR, timeout=900)
         apply_edits(stdout, Path(mod_dir))
 
-    # Step 3: Build
-    await progress("Tests passed — building jar...")
+    # Step 3: Bump version
+    old_version = _read_mod_version(mod_dir)
+    new_version = _bump_patch_version(old_version)
+    _write_mod_version(mod_dir, new_version)
+
+    # Step 4: Build
+    await progress(f"Tests passed — building jar (v{new_version})...")
     build_out, build_err, build_rc = await _run_shell(
         f"cd {mod_dir} && ./gradlew build 2>&1", cwd=mod_dir, timeout=120
     )
@@ -509,18 +540,21 @@ async def change_mod(
         combined = (build_out + build_err).strip()
         return f"Build misslyckades.\n```\n{combined[-800:]}\n```"
 
-    # Step 4: Deploy jar
+    # Step 5: Deploy jar — remove old versioned jars first
     jars = list(Path(mod_dir).glob("build/libs/*.jar"))
     jars = [j for j in jars if "sources" not in j.name]
     if not jars:
         return "Build lyckades men ingen jar hittades i build/libs/."
     jar = max(jars, key=lambda j: j.stat().st_mtime)
+    mod_prefix = Path(mod_dir).name
+    for old_jar in Path(SERVER_MODS_DIR).glob(f"{mod_prefix}-*.jar"):
+        old_jar.unlink(missing_ok=True)
     dest = Path(SERVER_MODS_DIR) / jar.name
     shutil.copy2(str(jar), str(dest))
 
-    # Step 5: Git checkpoint
+    # Step 6: Git checkpoint
     await progress("Deploying and creating git checkpoint...")
-    git_msg = f"Checkpoint: {modname} changed by {discord_user}"
+    git_msg = f"Checkpoint: {modname}-{new_version}.jar changed by {discord_user}"
     _out, git_err, git_rc = await _run_shell(
         f'git add -A && git commit -m "{git_msg}"', cwd=REPO_DIR
     )
@@ -532,7 +566,7 @@ async def change_mod(
             await progress(f"Warning: git push failed — {push_err.strip()[:200]}")
 
     return (
-        f"Mod **{modname}** uppdaterad!\n"
+        f"Mod **{modname}** uppdaterad till **v{new_version}**!\n"
         f"Servern behöver startas om för att ladda ändringarna.\n"
         f"Git checkpoint skapad och pushad: _{git_msg}_"
     )
