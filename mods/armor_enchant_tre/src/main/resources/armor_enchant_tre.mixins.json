@@ -4,11 +4,9 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AbstractCraftingAccessor",
-    "ForgingAccessor"
-  ],
-  "server": [
     "AnvilEnchantMixin",
     "CraftingArmorEnchantMixin",
+    "ForgingAccessor",
     "StatusEffectImmunityMixin"
   ],
   "injectors": {

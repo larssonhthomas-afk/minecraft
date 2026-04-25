@@ -564,6 +564,8 @@ async def remove_mod(modname: str) -> str:
     """Move a matching jar from mods/ to mods-disabled/."""
     os.makedirs(SERVER_MODS_DISABLED_DIR, exist_ok=True)
 
+    if modname.lower().endswith(".jar"):
+        modname = modname[:-4]
     matches = list(Path(SERVER_MODS_DIR).glob(f"*{modname}*.jar"))
     if not matches:
         return f"No active mod matching **{modname}** found."
@@ -585,6 +587,8 @@ async def activate_mod(modname: str) -> str:
     """Move a matching jar from mods-disabled/ back to mods/."""
     os.makedirs(SERVER_MODS_DISABLED_DIR, exist_ok=True)
 
+    if modname.lower().endswith(".jar"):
+        modname = modname[:-4]
     matches = list(Path(SERVER_MODS_DISABLED_DIR).glob(f"*{modname}*.jar"))
     if not matches:
         return f"No disabled mod matching **{modname}** found."
