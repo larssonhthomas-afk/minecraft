@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "armor_enchant_tre",
+  "version": "${version}",
+  "name": "ArmorEnchantTre",
+  "description": "Tre custom enchantments för rustning: Immunity (boots), Endurance (leggings), Extinguish (leggings).",
+  "authors": ["ArmorEnchantTre Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.armorenchanttre.ArmorEnchantTreMod"]
+  },
+  "mixins": [
+    "armor_enchant_tre.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

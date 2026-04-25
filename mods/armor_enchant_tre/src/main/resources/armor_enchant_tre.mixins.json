@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.armorenchanttre.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AbstractCraftingAccessor",
+    "ForgingAccessor"
+  ],
+  "server": [
+    "AnvilEnchantMixin",
+    "CraftingArmorEnchantMixin",
+    "StatusEffectImmunityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
