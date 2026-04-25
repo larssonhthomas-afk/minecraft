@@ -33,6 +33,8 @@ public final class AnvilCombiner {
     }
 
     public static int xpCost() {
-        return 0;
+        // Vanilla AnvilScreenHandler tillåter bara uttag av resultatet om levelCost > 0
+        // (se Slot.canTakeItems i AnvilScreenHandler). Vi sätter därför 1 istället för 0.
+        return 1;
     }
 }

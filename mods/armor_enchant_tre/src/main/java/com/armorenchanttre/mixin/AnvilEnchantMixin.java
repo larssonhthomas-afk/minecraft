@@ -41,7 +41,7 @@ public abstract class AnvilEnchantMixin {
 
         ItemStack result = left.copy();
         ItemMarker.writeMarker(result, type);
-        out.setStack(0, result);
         this.levelCost.set(AnvilCombiner.xpCost());
+        out.setStack(0, result);
     }
 }

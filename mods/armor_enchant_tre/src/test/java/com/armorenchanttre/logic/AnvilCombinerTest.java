@@ -98,7 +98,8 @@ class AnvilCombinerTest {
     }
 
     @Test
-    void xpCost_isZero() {
-        assertEquals(0, AnvilCombiner.xpCost());
+    void xpCost_isPositive() {
+        assertTrue(AnvilCombiner.xpCost() > 0,
+                "Vanilla AnvilScreenHandler kräver levelCost > 0 för att spelaren ska kunna plocka ut resultatet.");
     }
 }
