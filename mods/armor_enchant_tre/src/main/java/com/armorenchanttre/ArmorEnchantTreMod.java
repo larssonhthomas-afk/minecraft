@@ -16,6 +16,6 @@ public final class ArmorEnchantTreMod implements ModInitializer {
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(ArmorEffectApplier::onServerTick);
         CustomItemCommand.register();
-        LOGGER.info("armor_enchant_tre initierad: Immunity (boots), Endurance (leggings), Extinguish (leggings)");
+        LOGGER.info("armor_enchant_tre initierad: Immunity (boots), Endurance (leggings), Extinguish (chestplate)");
     }
 }

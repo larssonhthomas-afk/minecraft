@@ -35,11 +35,13 @@ public final class ArmorEffectApplier {
     private static void applyTo(ServerPlayerEntity player) {
         ItemStack feet = player.getEquippedStack(EquipmentSlot.FEET);
         ItemStack legs = player.getEquippedStack(EquipmentSlot.LEGS);
+        ItemStack chest = player.getEquippedStack(EquipmentSlot.CHEST);
 
         EnchantmentType feetEnchant = EnchantmentType.fromId(ItemMarker.readMarker(feet));
         EnchantmentType legsEnchant = EnchantmentType.fromId(ItemMarker.readMarker(legs));
+        EnchantmentType chestEnchant = EnchantmentType.fromId(ItemMarker.readMarker(chest));
 
-        Set<Effect> effects = ArmorEffects.effectsFor(feetEnchant, legsEnchant);
+        Set<Effect> effects = ArmorEffects.effectsFor(feetEnchant, legsEnchant, chestEnchant);
 
         if (effects.contains(Effect.SPEED_1)) {
             player.addStatusEffect(new StatusEffectInstance(

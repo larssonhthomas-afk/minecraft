@@ -35,9 +35,9 @@ class AnvilCombinerTest {
     }
 
     @Test
-    void combine_extinguishBookOnLeggings_isAllowed() {
+    void combine_extinguishBookOnChestplate_isAllowed() {
         EnchantmentType result = AnvilCombiner.combine(
-                armor("minecraft:iron_leggings"),
+                armor("minecraft:iron_chestplate"),
                 enchantedBook(EnchantmentType.EXTINGUISH));
         assertSame(EnchantmentType.EXTINGUISH, result);
     }
@@ -57,9 +57,9 @@ class AnvilCombinerTest {
     }
 
     @Test
-    void combine_extinguishBookOnChestplate_isRejected() {
+    void combine_extinguishBookOnLeggings_isRejected() {
         assertNull(AnvilCombiner.combine(
-                armor("minecraft:diamond_chestplate"),
+                armor("minecraft:diamond_leggings"),
                 enchantedBook(EnchantmentType.EXTINGUISH)));
     }
 

@@ -10,7 +10,7 @@ import java.util.Set;
  * Effekterna mappas direkt mot de tre enchantments:
  *   - IMMUNITY (boots)    -> POISON_IMMUNE, WITHER_IMMUNE, WEAKNESS_IMMUNE, SLOW_FALLING_IMMUNE
  *   - ENDURANCE (leggings) -> SPEED_1, SPRINT_PAST_HUNGER
- *   - EXTINGUISH (leggings) -> FIRE_RESISTANCE
+ *   - EXTINGUISH (chestplate) -> FIRE_RESISTANCE
  *
  * Effekterna försvinner direkt när rustningen tas av (ingen avklingning).
  */
@@ -31,9 +31,10 @@ public final class ArmorEffects {
     /**
      * @param feetEnchant enchantment på boots, eller null
      * @param legsEnchant enchantment på leggings, eller null
+     * @param chestEnchant enchantment på chestplate, eller null
      * @return ovärderad uppsättning av effekter som ska vara aktiva
      */
-    public static Set<Effect> effectsFor(EnchantmentType feetEnchant, EnchantmentType legsEnchant) {
+    public static Set<Effect> effectsFor(EnchantmentType feetEnchant, EnchantmentType legsEnchant, EnchantmentType chestEnchant) {
         Set<Effect> out = EnumSet.noneOf(Effect.class);
         if (feetEnchant == EnchantmentType.IMMUNITY) {
             out.add(Effect.POISON_IMMUNE);
@@ -45,7 +46,7 @@ public final class ArmorEffects {
             out.add(Effect.SPEED_1);
             out.add(Effect.SPRINT_PAST_HUNGER);
         }
-        if (legsEnchant == EnchantmentType.EXTINGUISH) {
+        if (chestEnchant == EnchantmentType.EXTINGUISH) {
             out.add(Effect.FIRE_RESISTANCE);
         }
         return out;

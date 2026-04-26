@@ -8,7 +8,7 @@ package com.armorenchanttre.logic;
 public enum EnchantmentType {
     IMMUNITY("immunity", "Immunity", "Dragon Key", ArmorSlot.FEET),
     ENDURANCE("endurance", "Endurance", "Warden Key", ArmorSlot.LEGS),
-    EXTINGUISH("extinguish", "Extinguish", "Wither Key", ArmorSlot.LEGS);
+    EXTINGUISH("extinguish", "Extinguish", "Wither Key", ArmorSlot.CHEST);
 
     private final String id;
     private final String bookName;

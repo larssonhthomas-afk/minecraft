@@ -11,12 +11,12 @@ class ArmorEffectsTest {
 
     @Test
     void noEnchants_givesNoEffects() {
-        assertTrue(ArmorEffects.effectsFor(null, null).isEmpty());
+        assertTrue(ArmorEffects.effectsFor(null, null, null).isEmpty());
     }
 
     @Test
     void immunityBoots_givesAllFourImmunityFlags() {
-        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.IMMUNITY, null);
+        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.IMMUNITY, null, null);
         assertEquals(Set.of(
                 Effect.POISON_IMMUNE,
                 Effect.WITHER_IMMUNE,
@@ -26,19 +26,19 @@ class ArmorEffectsTest {
 
     @Test
     void enduranceLeggings_givesSpeedAndSprintFlag() {
-        Set<Effect> effects = ArmorEffects.effectsFor(null, EnchantmentType.ENDURANCE);
+        Set<Effect> effects = ArmorEffects.effectsFor(null, EnchantmentType.ENDURANCE, null);
         assertEquals(Set.of(Effect.SPEED_1, Effect.SPRINT_PAST_HUNGER), effects);
     }
 
     @Test
-    void extinguishLeggings_givesFireResistance() {
-        Set<Effect> effects = ArmorEffects.effectsFor(null, EnchantmentType.EXTINGUISH);
+    void extinguishChestplate_givesFireResistance() {
+        Set<Effect> effects = ArmorEffects.effectsFor(null, null, EnchantmentType.EXTINGUISH);
         assertEquals(Set.of(Effect.FIRE_RESISTANCE), effects);
     }
 
     @Test
     void immunityBootsWithEnduranceLeggings_combinesEffects() {
-        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.IMMUNITY, EnchantmentType.ENDURANCE);
+        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.IMMUNITY, EnchantmentType.ENDURANCE, null);
         assertTrue(effects.contains(Effect.POISON_IMMUNE));
         assertTrue(effects.contains(Effect.WITHER_IMMUNE));
         assertTrue(effects.contains(Effect.WEAKNESS_IMMUNE));
@@ -49,29 +49,36 @@ class ArmorEffectsTest {
     }
 
     @Test
-    void immunityBootsWithExtinguishLeggings_combinesEffects() {
-        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.IMMUNITY, EnchantmentType.EXTINGUISH);
+    void immunityBootsWithExtinguishChestplate_combinesEffects() {
+        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.IMMUNITY, null, EnchantmentType.EXTINGUISH);
         assertTrue(effects.contains(Effect.FIRE_RESISTANCE));
         assertTrue(effects.contains(Effect.POISON_IMMUNE));
     }
 
     @Test
     void enduranceOnFeet_isIgnored() {
-        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.ENDURANCE, null);
+        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.ENDURANCE, null, null);
         assertTrue(effects.isEmpty(),
                 "Endurance ska bara appliceras när den är på leggings, inte på boots.");
     }
 
     @Test
     void extinguishOnFeet_isIgnored() {
-        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.EXTINGUISH, null);
+        Set<Effect> effects = ArmorEffects.effectsFor(EnchantmentType.EXTINGUISH, null, null);
         assertTrue(effects.isEmpty(),
-                "Extinguish ska bara appliceras när den är på leggings, inte på boots.");
+                "Extinguish ska bara appliceras när den är på chestplate, inte på boots.");
+    }
+
+    @Test
+    void extinguishOnLegs_isIgnored() {
+        Set<Effect> effects = ArmorEffects.effectsFor(null, EnchantmentType.EXTINGUISH, null);
+        assertTrue(effects.isEmpty(),
+                "Extinguish ska bara appliceras när den är på chestplate, inte på leggings.");
     }
 
     @Test
     void immunityOnLegs_isIgnored() {
-        Set<Effect> effects = ArmorEffects.effectsFor(null, EnchantmentType.IMMUNITY);
+        Set<Effect> effects = ArmorEffects.effectsFor(null, EnchantmentType.IMMUNITY, null);
         assertTrue(effects.isEmpty(),
                 "Immunity ska bara appliceras när den är på boots, inte på leggings.");
     }

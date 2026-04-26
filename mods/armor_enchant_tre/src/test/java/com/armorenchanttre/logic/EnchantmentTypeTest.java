@@ -23,8 +23,8 @@ class EnchantmentTypeTest {
     }
 
     @Test
-    void extinguish_isOnLegs_andRequiresWitherKey() {
-        assertEquals(EnchantmentType.ArmorSlot.LEGS, EnchantmentType.EXTINGUISH.armorSlot());
+    void extinguish_isOnChest_andRequiresWitherKey() {
+        assertEquals(EnchantmentType.ArmorSlot.CHEST, EnchantmentType.EXTINGUISH.armorSlot());
         assertEquals("Wither Key", EnchantmentType.EXTINGUISH.keyName());
         assertEquals("Extinguish", EnchantmentType.EXTINGUISH.bookName());
         assertEquals("extinguish", EnchantmentType.EXTINGUISH.id());
