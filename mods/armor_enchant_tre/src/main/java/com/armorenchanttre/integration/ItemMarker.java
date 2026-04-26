@@ -3,12 +3,15 @@ package com.armorenchanttre.integration;
 import com.armorenchanttre.logic.EnchantmentType;
 import com.armorenchanttre.logic.ItemView;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import java.util.List;
 
 /**
  * Översätter mellan riktiga ItemStacks och vår platta ItemView som logiken arbetar med.
@@ -53,5 +56,8 @@ public final class ItemMarker {
         NbtCompound nbt = existing.copyNbt();
         nbt.putString(NBT_KEY, type.id());
         stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+        Text loreLine = Text.literal(type.bookName())
+                .styled(s -> s.withColor(Formatting.BLUE).withBold(true).withItalic(false));
+        stack.set(DataComponentTypes.LORE, new LoreComponent(List.of(loreLine)));
     }
 }
