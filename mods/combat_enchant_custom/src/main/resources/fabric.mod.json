@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "combat_enchant_custom",
+  "version": "${version}",
+  "name": "CombatEnchantCustom",
+  "description": "Unbroken Chain: custom sword enchantment with escalating damage after consecutive hits.",
+  "authors": ["CombatEnchantCustom Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.combatenchantcustom.CombatEnchantCustomMod"]
+  },
+  "mixins": [
+    "combat_enchant_custom.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

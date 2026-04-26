@@ -191,6 +191,9 @@ Rules:
 - The first question is ALWAYS the plan summary — format it as "Plan:\n• ...\nNågot att ändra?".
 - "build?" is ALWAYS the last question, never omitted.
 - Max 3 questions total (plan + up to 1 clarifier + build?).
+
+DO NOT use any tools. Answer from your knowledge and the mod list only.
+Output ONLY the JSON object — no markdown, no text before or after.
 """
     stdout, _stderr, _rc = await _run_claude(prompt, timeout=120)
 
@@ -240,6 +243,18 @@ async def build_mod(
         pairs = [f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)]
         qa_section = "\n\n## Clarifications from the user\n" + "\n\n".join(pairs)
 
+    _template_files = {
+        "settings.gradle": "src/main/resources/fabric.mod.json",
+        "src/main/resources/lifesteal.mixins.json": "src/main/resources/lifesteal.mixins.json",
+    }
+    _tpl_parts = []
+    for _fname in ["settings.gradle", "src/main/resources/fabric.mod.json",
+                   "src/main/resources/lifesteal.mixins.json"]:
+        _path = Path(LIFESTEAL_TEMPLATE) / _fname
+        if _path.exists():
+            _tpl_parts.append(f"### {_fname}\n```\n{_path.read_text()}\n```")
+    template_section = "\n\n".join(_tpl_parts)
+
     prompt = f"""You are implementing a new Minecraft Fabric 1.21.4 server-side mod.
 
 ## Mod specification
@@ -251,9 +266,11 @@ async def build_mod(
 - Class name prefix        : {class_prefix}   (e.g. main class is {class_prefix}Mod)
 
 ## File locations
-- Create mod at            : {mod_dir}/
-- Template reference       : {LIFESTEAL_TEMPLATE}/   (study its structure; do NOT copy lifesteal logic)
-- Deploy jar to            : {SERVER_MODS_DIR}/
+- Create mod at : {mod_dir}/
+- Deploy jar to : {SERVER_MODS_DIR}/
+
+## Template files (already provided below — do NOT use Agent or Explore tools to read more files)
+{template_section}
 
 ## Gradle versions (copy exactly from lifesteal gradle.properties)
 minecraft_version=1.21.4
