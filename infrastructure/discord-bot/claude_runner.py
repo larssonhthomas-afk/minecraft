@@ -133,6 +133,8 @@ def _write_mod_version(mod_dir: str | Path, version: str):
 
 def _find_mod_dir(modname: str) -> Path | None:
     """Find a mod source directory by exact or partial name match."""
+    # Strip trailing punctuation (e.g. "mod-1.0.0.jar." → "mod-1.0.0.jar")
+    modname = modname.rstrip(".,; ")
     # Strip .jar extension and version suffix (e.g. "ranked_smp_rank-1.0.0.jar" → "ranked_smp_rank")
     if modname.lower().endswith(".jar"):
         modname = modname[:-4]
@@ -615,6 +617,7 @@ async def remove_mod(modname: str) -> str:
     """Move a matching jar from mods/ to mods-disabled/."""
     os.makedirs(SERVER_MODS_DISABLED_DIR, exist_ok=True)
 
+    modname = modname.rstrip(".,; ")
     if modname.lower().endswith(".jar"):
         modname = modname[:-4]
     matches = list(Path(SERVER_MODS_DIR).glob(f"*{modname}*.jar"))
@@ -638,6 +641,7 @@ async def activate_mod(modname: str) -> str:
     """Move a matching jar from mods-disabled/ back to mods/."""
     os.makedirs(SERVER_MODS_DISABLED_DIR, exist_ok=True)
 
+    modname = modname.rstrip(".,; ")
     if modname.lower().endswith(".jar"):
         modname = modname[:-4]
     matches = list(Path(SERVER_MODS_DISABLED_DIR).glob(f"*{modname}*.jar"))
