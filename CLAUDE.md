@@ -47,3 +47,34 @@ Dokumentation skrivs i `docs/` som vanliga `.md`-filer. GitHub Wiki speglas auto
 - Kör alltid `./gradlew test` efter kodändringar. Commita inte röda tester.
 - **Wiki-regel:** När en ny komponent, mod eller infrastrukturändring läggs till ska motsvarande dokumentation skapas eller uppdateras i `docs/`. Committa alltid doc-filen i samma commit som koden.
 - **Issue-regel:** Stäng GitHub-issues med en kommentar (vilken commit/PR som löste det) när funktionalitet är klar och deployad. Öppna nya issues för buggar eller förbättringar som upptäcks under arbetet.
+
+## Fabric Mixin — kända fallgropar (MC 1.21.4)
+
+### `PlayerEntity.attack()` anropar `sidedDamage`, inte `damage`
+
+I MC 1.21.4 delegerar `PlayerEntity.attack()` skadan via `Entity.sidedDamage(DamageSource, float)` — **inte** `Entity.damage()`. Korrekt Mixin-target:
+
+```
+Lnet/minecraft/entity/Entity;sidedDamage(Lnet/minecraft/entity/damage/DamageSource;F)Z
+```
+
+Intermediary: `class_1297.method_64420(class_1282, F)Z`
+
+När en *server-spelare tar emot* skada används däremot `ServerPlayerEntity.damage(ServerWorld, DamageSource, float)` — intermediary `method_64397`.
+
+### Diagnos: "0 target(s) scanned"
+
+Gröna tester ≠ fungerande Mixin. Injektionsfel syns bara när servern startar. När Mixin rapporterar "0 target(s) scanned":
+
+1. Läs refmappen (`build/classes/java/main/<modid>-refmap.json`) — den visar vad Loom faktiskt kopplade annotationen till i intermediary.
+2. Dekompilera den Yarn-mappade MC-jarn för att se vilka metoder som faktiskt anropas:
+   ```bash
+   MC_JAR=$(find <mod>/.gradle/loom-cache -name "minecraft-merged-d1fae903ae-*.jar" \
+     ! -name "*sources*" ! -name "*.backup" | head -1)
+   cd /tmp && jar xf "$MC_JAR" "net/minecraft/entity/player/PlayerEntity.class"
+   javap -c -p PlayerEntity.class | grep -A 300 "public void attack" | grep "invokevirtual"
+   ```
+
+### Föredra `@ModifyArg` framför `@Redirect`
+
+`@Redirect` kräver att du anropar målmetoden igen i handleren — om metoden inte är direkt åtkomlig i Yarn-Java uppstår kompilatorfel. `@ModifyArg` ändrar bara ett argument och låter Mixin sköta anropet. Välj `@ModifyArg` när du bara vill justera ett värde (t.ex. ett damage-float).
