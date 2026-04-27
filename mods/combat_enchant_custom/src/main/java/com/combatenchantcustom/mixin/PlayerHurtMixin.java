@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ServerPlayerEntity.class)
 public abstract class PlayerHurtMixin {
 
-    // In MC 1.21.4, damage signature is damage(ServerWorld, DamageSource, float)
+    // ServerPlayerEntity.damage(ServerWorld, DamageSource, float) — WITH ServerWorld (method_64397)
     @Inject(method = "damage", at = @At("HEAD"))
     private void combatEnchantCustom$resetChainOnDamage(ServerWorld world, DamageSource source,
             float amount, CallbackInfoReturnable<Boolean> cir) {
