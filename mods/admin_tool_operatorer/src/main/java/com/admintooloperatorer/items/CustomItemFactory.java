@@ -32,7 +32,6 @@ public final class CustomItemFactory {
 
     private static ItemStack fromRegistry(String namespace, String itemId) {
         var item = Registries.ITEM.get(Identifier.of(namespace, itemId));
-        if (item == Items.AIR) return ItemStack.EMPTY;
-        return new ItemStack(item);
+        return item == Items.AIR ? ItemStack.EMPTY : item.getDefaultStack();
     }
 }
