@@ -55,6 +55,10 @@ public class RankDataStore {
         playerTiers.put(uuid, tier);
     }
 
+    public synchronized void removeTier(UUID uuid) {
+        playerTiers.remove(uuid);
+    }
+
     public synchronized void clearAllTiers() {
         playerTiers.clear();
     }

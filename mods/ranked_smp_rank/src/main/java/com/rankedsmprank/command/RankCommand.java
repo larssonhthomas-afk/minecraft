@@ -38,6 +38,7 @@ public final class RankCommand {
 
         TreeMap<Integer, UUID> byTier = new TreeMap<>();
         for (Map.Entry<UUID, Integer> e : all.entrySet()) {
+            if (!RankDefinition.isValidTier(e.getValue())) continue;
             byTier.put(e.getValue(), e.getKey());
         }
 

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "admin_tool_operatorer",
+  "version": "${version}",
+  "name": "Admin Tool Operatorer",
+  "description": "Admin commands: /check inventory|enderchest|bag, /rank set, /give customitem.",
+  "authors": ["AdminTool Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.admintooloperatorer.AdminToolOperatorerMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21",
+    "ranked_smp_rank": "*",
+    "combat_enchant_custom": "*"
+  }
+}
