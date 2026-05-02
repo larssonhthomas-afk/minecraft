@@ -12,15 +12,15 @@ public final class CustomItemRegistry {
 
     private static final List<String> BASE_ITEMS = List.of(
             "neutral_player_head",
-            "Warden_key",
-            "Whiter_key",
-            "Dragon_key",
-            "Immunity",
-            "Extinguish",
+            "warden_key",
+            "whiter_key",
+            "dragon_key",
+            "immunity",
+            "extinguish",
             "endurance"
     );
 
-    private static final List<String> ENCHANT_BOOKS = new ArrayList<>(List.of("Unbroken_chain"));
+    private static final List<String> ENCHANT_BOOKS = new ArrayList<>(List.of("unbroken_chain"));
 
     private CustomItemRegistry() {}
 

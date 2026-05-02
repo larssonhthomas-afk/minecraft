@@ -1,58 +1,38 @@
 package com.admintooloperatorer.items;
 
 import com.combatenchantcustom.integration.BookCraftingMatcher;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.registry.Registries;
+import net.minecraft.util.Identifier;
 
 /**
  * Creates ItemStacks for all custom items handled by /give customitem.
+ * Keys and heads come from drop_n_r; enchant-effect items from armor_enchant_tre;
+ * enchant books from combat_enchant_custom.
  */
 public final class CustomItemFactory {
-
-    public static final String NBT_KEY = "admin_tool_item_id";
 
     private CustomItemFactory() {}
 
     public static ItemStack create(String id) {
         if (id == null) return ItemStack.EMPTY;
         return switch (id.toLowerCase()) {
-            case "neutral_player_head" -> neutralPlayerHead();
-            case "warden_key"          -> namedItem(Items.TRIAL_KEY,          "warden_key",  "Warden Key",  Formatting.GREEN);
-            case "whiter_key"          -> namedItem(Items.OMINOUS_TRIAL_KEY,  "whiter_key",  "Whiter Key",  Formatting.LIGHT_PURPLE);
-            case "dragon_key"          -> namedItem(Items.NETHER_STAR,        "dragon_key",  "Dragon Key",  Formatting.DARK_PURPLE);
-            case "immunity"            -> namedItem(Items.TOTEM_OF_UNDYING,   "immunity",    "Immunity",    Formatting.GOLD);
-            case "extinguish"          -> namedItem(Items.POWDER_SNOW_BUCKET, "extinguish",  "Extinguish",  Formatting.AQUA);
-            case "endurance"           -> namedItem(Items.HEART_OF_THE_SEA,   "endurance",   "Endurance",   Formatting.BLUE);
+            case "neutral_player_head" -> fromRegistry("drop_n_r",         "neutral_player_head");
+            case "warden_key"          -> fromRegistry("drop_n_r",         "warden_key");
+            case "whiter_key"          -> fromRegistry("drop_n_r",         "whiter_key");
+            case "dragon_key"          -> fromRegistry("drop_n_r",         "dragon_key");
+            case "immunity"            -> fromRegistry("armor_enchant_tre", "immunity");
+            case "extinguish"          -> fromRegistry("armor_enchant_tre", "extinguish");
+            case "endurance"           -> fromRegistry("armor_enchant_tre", "endurance");
             case "unbroken_chain"      -> BookCraftingMatcher.createUnbrokenChainBook();
             default -> ItemStack.EMPTY;
         };
     }
 
-    private static ItemStack neutralPlayerHead() {
-        ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
-        stack.set(DataComponentTypes.CUSTOM_NAME,
-                Text.literal("Neutral Player Head")
-                        .styled(s -> s.withColor(Formatting.WHITE).withItalic(false)));
-        NbtCompound nbt = new NbtCompound();
-        nbt.putString(NBT_KEY, "neutral_player_head");
-        stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
-        return stack;
-    }
-
-    private static ItemStack namedItem(Item base, String id, String displayName, Formatting color) {
-        ItemStack stack = new ItemStack(base);
-        stack.set(DataComponentTypes.CUSTOM_NAME,
-                Text.literal(displayName)
-                        .styled(s -> s.withColor(color).withItalic(false)));
-        NbtCompound nbt = new NbtCompound();
-        nbt.putString(NBT_KEY, id);
-        stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
-        return stack;
+    private static ItemStack fromRegistry(String namespace, String itemId) {
+        var item = Registries.ITEM.get(Identifier.of(namespace, itemId));
+        if (item == Items.AIR) return ItemStack.EMPTY;
+        return new ItemStack(item);
     }
 }
