@@ -1,5 +1,6 @@
 package com.admintooloperatorer;
 
+import com.admintooloperatorer.command.AdminGiveCustomItemCommand;
 import com.admintooloperatorer.command.AdminRankCommand;
 import com.admintooloperatorer.command.CheckCommand;
 import net.fabricmc.api.ModInitializer;
@@ -17,6 +18,7 @@ public final class AdminToolOperatorerMod implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, env) -> {
             CheckCommand.register(dispatcher);
             AdminRankCommand.register(dispatcher);
+            AdminGiveCustomItemCommand.register(dispatcher);
         });
         LOGGER.info("AdminToolOperatorer initialized");
     }
