@@ -25,8 +25,8 @@ public final class AdminGiveCustomItemCommand {
         dispatcher.register(
                 CommandManager.literal("give")
                         .then(CommandManager.literal("customitem")
-                                .requires(src -> src.hasPermissionLevel(2))
                                 .then(CommandManager.argument("player", EntityArgumentType.player())
+                                        .requires(src -> src.hasPermissionLevel(2))
                                         .then(CommandManager.argument("item", StringArgumentType.word())
                                                 .suggests((ctx, builder) ->
                                                         CommandSource.suggestMatching(
