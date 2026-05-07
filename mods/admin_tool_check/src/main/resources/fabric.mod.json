@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "admin_tool_check",
+  "version": "${version}",
+  "name": "Admin Tool Check",
+  "description": "Admin commands: /check inventory|enderchest|bag, /rank set.",
+  "authors": ["AdminToolCheck Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.admintoolcheck.AdminToolCheckMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21",
+    "ranked_smp_rank": "*"
+  }
+}

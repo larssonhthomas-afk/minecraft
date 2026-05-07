@@ -8,6 +8,8 @@ import json
 import os
 import re
 import shutil
+import tempfile
+import zipfile
 from pathlib import Path
 
 REPO_DIR = "/opt/minecraft-dev/minecraft"
@@ -613,8 +615,49 @@ async def list_mods() -> str:
 # !remove
 # ---------------------------------------------------------------------------
 
+def _read_mod_id(jar_path: Path) -> str | None:
+    """Return the Fabric mod ID from a jar's fabric.mod.json, or None."""
+    try:
+        with zipfile.ZipFile(jar_path) as zf:
+            with zf.open("fabric.mod.json") as f:
+                return json.load(f).get("id")
+    except Exception:
+        return None
+
+
+def _strip_dependency(jar_path: Path, mod_id: str) -> bool:
+    """Remove mod_id from the depends block in a jar's fabric.mod.json. Returns True if changed."""
+    try:
+        with zipfile.ZipFile(jar_path, "r") as zf:
+            if "fabric.mod.json" not in zf.namelist():
+                return False
+            meta = json.loads(zf.read("fabric.mod.json"))
+
+        depends = meta.get("depends", {})
+        if mod_id not in depends:
+            return False
+
+        del depends[mod_id]
+        meta["depends"] = depends
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jar") as tmp:
+            tmp_path = Path(tmp.name)
+
+        with zipfile.ZipFile(jar_path, "r") as zin, zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                if item.filename == "fabric.mod.json":
+                    zout.writestr(item, json.dumps(meta, indent=2))
+                else:
+                    zout.writestr(item, zin.read(item.filename))
+
+        shutil.move(str(tmp_path), str(jar_path))
+        return True
+    except Exception:
+        return False
+
+
 async def remove_mod(modname: str) -> str:
-    """Move a matching jar from mods/ to mods-disabled/."""
+    """Move a matching jar from mods/ to mods-disabled/ and strip its ID from other mods' depends."""
     os.makedirs(SERVER_MODS_DISABLED_DIR, exist_ok=True)
 
     modname = modname.rstrip(".,; ")
@@ -625,12 +668,22 @@ async def remove_mod(modname: str) -> str:
         return f"No active mod matching **{modname}** found."
 
     jar = matches[0]
+    removed_id = _read_mod_id(jar)
+
     dest = Path(SERVER_MODS_DISABLED_DIR) / jar.name
     shutil.move(str(jar), str(dest))
-    return (
-        f"Mod **{jar.name}** disabled — moved to `mods-disabled/`.\n"
-        f"The server needs a restart. Use `!activate {modname}` to re-enable."
-    )
+
+    patched = []
+    if removed_id:
+        for other in Path(SERVER_MODS_DIR).glob("*.jar"):
+            if _strip_dependency(other, removed_id):
+                patched.append(other.name)
+
+    msg = f"Mod **{jar.name}** disabled — moved to `mods-disabled/`."
+    if patched:
+        msg += f"\nRemoved dependency `{removed_id}` from: {', '.join(f'`{p}`' for p in patched)}."
+    msg += f"\nThe server needs a restart. Use `!activate {modname}` to re-enable."
+    return msg
 
 
 # ---------------------------------------------------------------------------
@@ -901,4 +954,47 @@ async def reset_health() -> str:
     return (
         f"✅ **{count} spelare** återställda till 20 HP (10 hjärtan).\n"
         f"Servern startar nu — spelarna kan logga in om ~30 sekunder."
+    )
+
+
+# ---------------------------------------------------------------------------
+# !resetworld
+# ---------------------------------------------------------------------------
+
+_WORLD_DIR = Path(SERVER_DIR) / "world"
+
+_WORLD_DELETE = [
+    "region", "entities", "poi", "data",
+    "DIM-1", "DIM1",
+    "playerdata", "advancements", "stats",
+    "level.dat", "level.dat_old",
+]
+
+
+async def reset_world() -> str:
+    """Stop server, wipe world (terrain + player data), restart."""
+    _, _, rc = await _run_shell("sudo systemctl stop minecraft", timeout=60)
+    if rc != 0:
+        return "❌ Kunde inte stoppa minecraft.service — world reset avbrutet."
+
+    await asyncio.sleep(5)
+
+    deleted = []
+    for name in _WORLD_DELETE:
+        target = _WORLD_DIR / name
+        if target.exists() or target.is_symlink():
+            _, _, rc = await _run_shell(f"sudo rm -rf {target}")
+            if rc == 0:
+                deleted.append(name)
+
+    await _run_shell("sudo systemctl reset-failed minecraft.service")
+    _, _, rc = await _run_shell("sudo systemctl start minecraft", timeout=30)
+    if rc != 0:
+        return f"Världen rensad ({', '.join(deleted)}) men servern misslyckades starta — kolla `journalctl -u minecraft`."
+
+    return (
+        f"🌍 **World reset klart.**\n"
+        f"Raderat: {', '.join(f'`{d}`' for d in deleted)}\n"
+        f"Behållet: `lifesteal.json`, `ranked_smp.json`, `datapacks/`\n"
+        f"Servern startar — vänta ~30 s innan du loggar in."
     )

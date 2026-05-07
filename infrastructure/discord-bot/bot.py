@@ -35,6 +35,7 @@ from claude_runner import (
     get_server_status,
     restart_server,
     reset_health,
+    reset_world,
 )
 
 load_dotenv()
@@ -78,6 +79,7 @@ HELP_TEXT = """\
 `!server` — Visa serverstatus, RAM, disk och aktiva spelare.
 `!restart` — Starta om Minecraft-servern.
 `!reset` — Återställ alla spelares HP till standard 20 HP (10 hjärtan).
+`!resetworld` — Radera världen helt (terräng + spelardata) och starta om med ny värld.
 `!help` — Visa denna lista.
 
 Alla svar visas i trådar.
@@ -441,6 +443,35 @@ async def cmd_reset(ctx: commands.Context):
     await thread.send("Återställer alla spelares HP till 20...")
     try:
         await thread.send(await reset_health())
+    except Exception as exc:
+        await thread.send(f"Error: {exc}")
+
+
+@bot.command(name="resetworld")
+async def cmd_reset_world(ctx: commands.Context):
+    thread = await get_or_create_thread(ctx.message, "resetworld")
+    await thread.send(
+        "⚠️ **VARNING:** Detta raderar all terräng, spelardata, advancements och stats permanent.\n"
+        "Servern startas om med en helt ny värld.\n"
+        "Svara **confirm** inom 30 s för att fortsätta, annars avbryts det."
+    )
+
+    def check(m: discord.Message) -> bool:
+        return m.channel.id == thread.id and m.author == ctx.author
+
+    try:
+        reply = await bot.wait_for("message", timeout=30.0, check=check)
+    except asyncio.TimeoutError:
+        await thread.send("Timeout — world reset avbrutet.")
+        return
+
+    if reply.content.strip().lower() != "confirm":
+        await thread.send("Avbrutet.")
+        return
+
+    await thread.send("Stoppar servern och rensar världen…")
+    try:
+        await thread.send(await reset_world())
     except Exception as exc:
         await thread.send(f"Error: {exc}")
 
