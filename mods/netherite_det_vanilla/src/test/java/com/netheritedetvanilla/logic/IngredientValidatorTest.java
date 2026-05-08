@@ -9,8 +9,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IngredientValidatorTest {
 
-    private static ItemView debris() {
-        return ItemView.of(IngredientValidator.ANCIENT_DEBRIS);
+    private static ItemView netheriteScrap() {
+        return ItemView.of(IngredientValidator.NETHERITE_SCRAP);
     }
 
     private static ItemView dragonKey() {
@@ -35,10 +35,10 @@ class IngredientValidatorTest {
 
     private static List<ItemView> validGrid() {
         List<ItemView> g = new ArrayList<>();
-        g.add(debris());
-        g.add(debris());
-        g.add(debris());
-        g.add(debris());
+        g.add(netheriteScrap());
+        g.add(netheriteScrap());
+        g.add(netheriteScrap());
+        g.add(netheriteScrap());
         g.add(dragonKey());
         g.add(witherKey());
         g.add(wardenKey());
@@ -60,15 +60,15 @@ class IngredientValidatorTest {
         g.add(wardenKey());
         g.add(witherKey());
         g.add(dragonKey());
-        g.add(debris());
-        g.add(debris());
-        g.add(debris());
-        g.add(debris());
+        g.add(netheriteScrap());
+        g.add(netheriteScrap());
+        g.add(netheriteScrap());
+        g.add(netheriteScrap());
         assertTrue(IngredientValidator.validate(g));
     }
 
     @Test
-    void validate_missingOneDebris_returnsFalse() {
+    void validate_missingOneNetheriteScrap_returnsFalse() {
         List<ItemView> g = validGrid();
         g.set(0, ItemView.empty());
         assertFalse(IngredientValidator.validate(g));
@@ -117,6 +117,13 @@ class IngredientValidatorTest {
     }
 
     @Test
+    void validate_ancientDebrisNotAccepted_returnsFalse() {
+        List<ItemView> g = validGrid();
+        g.set(0, ItemView.of("minecraft:ancient_debris"));
+        assertFalse(IngredientValidator.validate(g));
+    }
+
+    @Test
     void validate_emptySlot_returnsFalse() {
         List<ItemView> g = validGrid();
         g.set(3, ItemView.empty());
@@ -130,35 +137,35 @@ class IngredientValidatorTest {
 
     @Test
     void validate_wrongGridSize_returnsFalse() {
-        assertFalse(IngredientValidator.validate(List.of(debris())));
+        assertFalse(IngredientValidator.validate(List.of(netheriteScrap())));
         assertFalse(IngredientValidator.validate(new ArrayList<>()));
     }
 
     @Test
     void validate_missingDragonKey_returnsFalse() {
         List<ItemView> g = validGrid();
-        g.set(4, debris());
+        g.set(4, netheriteScrap());
         assertFalse(IngredientValidator.validate(g));
     }
 
     @Test
     void validate_missingWitherKey_returnsFalse() {
         List<ItemView> g = validGrid();
-        g.set(5, debris());
+        g.set(5, netheriteScrap());
         assertFalse(IngredientValidator.validate(g));
     }
 
     @Test
     void validate_missingWardenKey_returnsFalse() {
         List<ItemView> g = validGrid();
-        g.set(6, debris());
+        g.set(6, netheriteScrap());
         assertFalse(IngredientValidator.validate(g));
     }
 
     @Test
     void validate_missingGoldBlock_returnsFalse() {
         List<ItemView> g = validGrid();
-        g.set(8, debris());
+        g.set(8, netheriteScrap());
         assertFalse(IngredientValidator.validate(g));
     }
 

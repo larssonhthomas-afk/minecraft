@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Validerar att en 3x3 crafting-grid innehåller exakt de ingredienser som krävs
  * för att crafta ett Netherite Ingot:
- *   4x minecraft:ancient_debris
+ *   4x minecraft:netherite_scrap
  *   1x Dragon Key  (firework_star + customName "Dragon Key")
  *   1x Wither Key  (firework_star + customName "Wither Key")
  *   1x Warden Key  (firework_star + customName "Warden Key")
@@ -16,7 +16,7 @@ import java.util.List;
  */
 public final class IngredientValidator {
 
-    public static final String ANCIENT_DEBRIS    = "minecraft:ancient_debris";
+    public static final String NETHERITE_SCRAP    = "minecraft:netherite_scrap";
     public static final String FIREWORK_STAR     = "minecraft:firework_star";
     public static final String PLAYER_HEAD       = "minecraft:player_head";
     public static final String GOLD_BLOCK        = "minecraft:gold_block";
@@ -45,7 +45,7 @@ public final class IngredientValidator {
             String id   = view.itemId();
             String name = view.customName();
 
-            if (ANCIENT_DEBRIS.equals(id)) {
+            if (NETHERITE_SCRAP.equals(id)) {
                 ancientDebris++;
             } else if (FIREWORK_STAR.equals(id) && DRAGON_KEY_NAME.equals(name)) {
                 if (dragonKey) return false;
