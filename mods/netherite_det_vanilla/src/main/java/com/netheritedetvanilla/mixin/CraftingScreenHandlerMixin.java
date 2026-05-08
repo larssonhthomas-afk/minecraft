@@ -5,6 +5,7 @@ import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.RecipeInputInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.CraftingScreenHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,6 +29,8 @@ public abstract class CraftingScreenHandlerMixin {
         ItemStack result = CraftingMatcher.tryCraft(grid);
         if (result != null) {
             output.setStack(0, result);
+        } else if (output.getStack(0).isOf(Items.NETHERITE_INGOT)) {
+            output.setStack(0, ItemStack.EMPTY);
         }
     }
 }
