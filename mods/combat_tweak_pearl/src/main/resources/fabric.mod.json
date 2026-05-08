@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "combat_tweak_pearl",
+  "version": "${version}",
+  "name": "CombatTweakPearl",
+  "description": "15s cooldown for ender pearls and wind charges; mace damage nerfed 40% capped at 7 hearts.",
+  "authors": ["Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.combattweakpearl.CombatTweakPearlMod"]
+  },
+  "mixins": [
+    "combat_tweak_pearl.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

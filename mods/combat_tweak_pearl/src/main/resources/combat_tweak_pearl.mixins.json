@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.combattweakpearl.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "CooldownOverrideMixin",
+    "MaceAttackMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
