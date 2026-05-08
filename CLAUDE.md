@@ -2,13 +2,27 @@
 
 Detta repo innehåller alla komponenter för vår privata Minecraft-server: mods, konfiguration, deploy-skript och dokumentation.
 
+## MODS
+
+Varje rad: **mod-id** — `mods/<dir>/` — kort beskrivning av spelmekaniken.
+Uppdatera denna lista varje gång en mod skapas eller ändras.
+
+- **lifesteal** — `mods/lifesteal/` — vid PvP-kill: ett hjärta (2 HP) förs permanent från offer till mördare
+- **combat_enchant_custom** — `mods/combat_enchant_custom/` — Unbroken Chain-svärdenchantment: +3% skada per träff efter 3 i rad (max +30%), kedjebrott vid skada
+- **combat_tweak_pearl** — `mods/combat_tweak_pearl/` — 15s cooldown på ender pearl och wind charge; mace-skada nerfad -40% med max 14 HP (7 hjärtan) per slag
+- **armor_enchant_tre** — `mods/armor_enchant_tre/` — rustningsenchantment (tre)
+- **drop_n_r** — `mods/drop_n_r/` — drop & respawn-tweak
+- **world_tweak_ancient** — `mods/world_tweak_ancient/` — världstweak för ancient mechanics
+- **special_death_message** — `mods/special_death_message/` — anpassade dödsmeddelanden
+- **ranked_smp_rank** — `mods/ranked_smp_rank/` — 9-nivåers rangsystem med PvP-swap, hälsa/potion/XP-buffs och extra inventory via /bag
+- **admin_tool_operatorer** — `mods/admin_tool_operatorer/` — admin-kommandon: /check inv/enderchest/bag, /rank set, /give customitem
+- **admin_tool_check** — `mods/admin_tool_check/` — op-verktyg för att inspektera spelares inventory/enderchest/bag live
+
 ## Struktur
 
-- `lifesteal/` — LifeSteal Fabric-mod (permanent hjärtöverföring vid PvP)
+- `mods/` — alla Fabric-mods (se ##MODS ovan)
 - `docs/` — Markdown-dokumentation, synkas automatiskt till GitHub Wiki
 - `.github/workflows/` — CI/CD (bygge, test, deploy, wiki-sync)
-
-Fler mods och komponenter läggs till som egna undermappar över tid.
 
 ## Servermiljö
 
