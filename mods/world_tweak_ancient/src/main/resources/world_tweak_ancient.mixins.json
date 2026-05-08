@@ -6,7 +6,8 @@
   "server": [
     "ChunkRegionGoldBlockMixin",
     "DrownedEntityMixin",
-    "ServerWorldSpawnEntityMixin"
+    "ServerWorldSpawnEntityMixin",
+    "LootTableGlobalBanMixin"
   ],
   "injectors": {
     "defaultRequire": 1
