@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "gold_guld_spawn",
+  "version": "${version}",
+  "name": "Gold Guld Spawn",
+  "description": "Spawnar 1.5x mer guld i overworld och nether.",
+  "authors": [],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.goldguldspawn.GoldGuldSpawnMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

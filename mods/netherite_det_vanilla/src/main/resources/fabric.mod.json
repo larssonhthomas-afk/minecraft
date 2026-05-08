@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "netherite_det_vanilla",
+  "version": "${version}",
+  "name": "NetheriteDetVanilla",
+  "description": "Ersätter vanilla Netherite-receptet med ett custom crafting-recept och sänker knockback resistance på Netherite-rustning från 1.0 till 0.5.",
+  "authors": ["NetheriteDetVanilla Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.netheritedetvanilla.NetheriteDetVanillaMod"]
+  },
+  "mixins": [
+    "netherite_det_vanilla.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

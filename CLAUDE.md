@@ -17,6 +17,7 @@ Uppdatera denna lista varje gång en mod skapas eller ändras.
 - **ranked_smp_rank** — `mods/ranked_smp_rank/` — 9-nivåers rangsystem med PvP-swap, hälsa/potion/XP-buffs och extra inventory via /bag
 - **admin_tool_operatorer** — `mods/admin_tool_operatorer/` — admin-kommandon: /check inv/enderchest/bag, /rank set, /give customitem
 - **admin_tool_check** — `mods/admin_tool_check/` — op-verktyg för att inspektera spelares inventory/enderchest/bag live
+- **gold_guld_spawn** — `mods/gold_guld_spawn/` — 1.5× guld ore spawn i overworld (+2/chunk) och nether (+10/chunk) via Fabric BiomeModifications
 
 ## Struktur
 

@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.netheritedetvanilla.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AbstractCraftingAccessor",
+    "CraftingScreenHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -80,6 +80,7 @@ HELP_TEXT = """\
 `!restart` — Starta om Minecraft-servern.
 `!reset` — Återställ alla spelares HP till standard 20 HP (10 hjärtan).
 `!resetworld` — Radera världen helt (terräng + spelardata) och starta om med ny värld.
+`!claudemd` — Visa central CLAUDE.md (modregister + arkitekturregler).
 `!help` — Visa denna lista.
 
 Alla svar visas i trådar.
@@ -472,6 +473,17 @@ async def cmd_reset_world(ctx: commands.Context):
     await thread.send("Stoppar servern och rensar världen…")
     try:
         await thread.send(await reset_world())
+    except Exception as exc:
+        await thread.send(f"Error: {exc}")
+
+
+@bot.command(name="claudemd")
+async def cmd_claudemd(ctx: commands.Context):
+    thread = await get_or_create_thread(ctx.message, "CLAUDE.md")
+    try:
+        content = open("/opt/minecraft-dev/minecraft/CLAUDE.md").read()
+        for chunk in [content[i:i+1990] for i in range(0, len(content), 1990)]:
+            await thread.send(f"```\n{chunk}\n```")
     except Exception as exc:
         await thread.send(f"Error: {exc}")
 
