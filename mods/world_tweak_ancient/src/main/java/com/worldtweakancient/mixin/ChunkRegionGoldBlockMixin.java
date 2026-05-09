@@ -11,12 +11,15 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.ChunkRegion;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ChunkRegion.class)
 public abstract class ChunkRegionGoldBlockMixin {
+
+    @Shadow private ServerWorld world;
 
     @Inject(method = "setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;II)Z",
             at = @At("HEAD"),
@@ -26,10 +29,8 @@ public abstract class ChunkRegionGoldBlockMixin {
             CallbackInfoReturnable<Boolean> cir) {
         NetherWorldGenBlockBanList list = WorldTweakAncientMod.blockBanList();
         if (list == null) return;
-        ChunkRegion self = (ChunkRegion) (Object) this;
-        ServerWorld world = self.toServerWorld();
-        if (world == null) return;
-        RegistryKey<World> dimension = world.getRegistryKey();
+        if (this.world == null) return;
+        RegistryKey<World> dimension = this.world.getRegistryKey();
         Identifier dimensionId = dimension.getValue();
         Identifier blockId = Registries.BLOCK.getId(state.getBlock());
         if (dimensionId == null || blockId == null) return;
