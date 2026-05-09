@@ -74,7 +74,7 @@ HELP_TEXT = """\
 `!activate <modnamn>` — Aktivera en inaktiverad mod.
 `!restore <hash>` — Återställ allt (repo + mods + server) till en commit.
 `!restore server <hash>` — Återställ bara server-configs.
-`!restore <modnamn> <hash>` — Återställ bara en specifik mod.
+`!restore <modnamn> <hash|version>` — Återställ bara en specifik mod (hash eller t.ex. `1.0.1`).
 `!history` — Visa de 10 senaste Git-commits med hash.
 `!server` — Visa serverstatus, RAM, disk och aktiva spelare.
 `!restart` — Starta om Minecraft-servern.
@@ -84,6 +84,7 @@ HELP_TEXT = """\
 `!help` — Visa denna lista.
 
 Alla svar visas i trådar.
+Wiki: https://github.com/larssonhthomas-afk/minecraft/wiki
 """
 
 
