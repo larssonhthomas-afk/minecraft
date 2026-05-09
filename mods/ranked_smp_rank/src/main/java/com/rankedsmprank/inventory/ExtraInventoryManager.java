@@ -87,6 +87,19 @@ public class ExtraInventoryManager {
         return existing == null ? List.of() : extractUsableItems(existing);
     }
 
+    public synchronized Map<UUID, BagInventory> getAllInventories() {
+        return new HashMap<>(inventories);
+    }
+
+    public synchronized void restore(UUID playerId, int usableSlots, Map<Integer, ItemStack> items) {
+        BagInventory inv = getOrCreate(playerId, usableSlots);
+        for (Map.Entry<Integer, ItemStack> e : items.entrySet()) {
+            if (e.getKey() < usableSlots && !e.getValue().isEmpty()) {
+                inv.setStack(e.getKey(), e.getValue());
+            }
+        }
+    }
+
     public synchronized void remove(UUID playerId) {
         inventories.remove(playerId);
     }
