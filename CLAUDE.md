@@ -49,10 +49,15 @@ Uppdatera denna lista varje gång en mod skapas eller ändras.
 
 Dokumentation skrivs i `docs/` som vanliga `.md`-filer. GitHub Wiki speglas automatiskt från denna mapp via workflow.
 
-## Säkerhet
+## Serverkonfiguration — låsta värden
 
-- Inga secrets i repot. Använd GitHub Secrets och environment variables.
-- SSH-nycklar och API-tokens nämns aldrig i kod eller commit-meddelanden.
+Följande inställningar i `server/server.properties` är permanenta och får **aldrig** ändras:
+
+| Inställning | Värde | Motivering |
+|---|---|---|
+| `difficulty` | `hard` | Servern ska alltid köras på Hard — inget undantag |
+
+Ändra inte dessa värden vid `!restore server`, konfigurationsjusteringar eller andra operationer. Om en restore skulle skriva över ett låst värde ska det skrivas tillbaka direkt efteråt.
 
 ## Arbetsregler för Claude Code
 
