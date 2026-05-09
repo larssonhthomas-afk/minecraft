@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(LootTable.class)
@@ -23,10 +24,12 @@ public abstract class LootTableGlobalBanMixin {
         if (list == null) return;
         List<ItemStack> loot = cir.getReturnValue();
         if (loot == null) return;
-        loot.removeIf(stack -> {
+        List<ItemStack> filtered = new ArrayList<>(loot);
+        filtered.removeIf(stack -> {
             if (stack == null || stack.isEmpty()) return false;
             Identifier id = Registries.ITEM.getId(stack.getItem());
             return id != null && list.isBanned(id.toString());
         });
+        cir.setReturnValue(filtered);
     }
 }

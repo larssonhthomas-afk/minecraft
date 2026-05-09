@@ -28,6 +28,7 @@ public abstract class ChunkRegionGoldBlockMixin {
         if (list == null) return;
         ChunkRegion self = (ChunkRegion) (Object) this;
         ServerWorld world = self.toServerWorld();
+        if (world == null) return;
         RegistryKey<World> dimension = world.getRegistryKey();
         Identifier dimensionId = dimension.getValue();
         Identifier blockId = Registries.BLOCK.getId(state.getBlock());
