@@ -90,6 +90,32 @@ Gröna tester ≠ fungerande Mixin. Injektionsfel syns bara när servern startar
    javap -c -p PlayerEntity.class | grep -A 300 "public void attack" | grep "invokevirtual"
    ```
 
+### Ange alltid full descriptor när en klass har överlagrade metoder
+
+Utan descriptor väljer Mixin själv bland matchande metoder — vilket kan vara fel overload. Resultatet är `InvalidInjectionException: Invalid descriptor` vid serverstart, inte vid kompilering eller test.
+
+**Regel:** Skriv alltid full descriptor i `method`-attributet om målklassen har mer än en metod med samma namn.
+
+```java
+// FEL — Mixin kan välja fel overload (t.ex. void-varianten)
+@Inject(method = "generateLoot", at = @At("RETURN"))
+
+// RÄTT — pekar ut exakt den overload som returnerar ObjectArrayList
+@Inject(
+    method = "generateLoot(Lnet/minecraft/loot/context/LootWorldContext;)Lit/unimi/dsi/fastutil/objects/ObjectArrayList;",
+    at = @At("RETURN")
+)
+```
+
+Descriptorn använder Yarn-mappade MC-klassnamn (Loom remapar dem till intermediary vid bygget). Kontrollera tillgängliga overloads med `javap` på den Yarn-mappade MC-jarn:
+
+```bash
+MCJAR=$(find ~/.gradle/caches/fabric-loom -name "minecraft-merged-*.jar" ! -name "*sources*" ! -name "*.backup" | head -1)
+jar xf "$MCJAR" net/minecraft/loot/LootTable.class && javap -p LootTable.class | grep generateLoot && rm -rf net/
+```
+
+Verkligt fall: `LootTableGlobalBanMixin` i `world_tweak_ancient` v1.0.0–1.0.2 matchade `generateLoot(LootWorldContext, long, Consumer)` (void) istället för `generateLoot(LootWorldContext)` → `ObjectArrayList`. Servern kraschade vid varje start tills descriptorn sattes explicit i v1.0.3.
+
 ### Föredra `@ModifyArg` framför `@Redirect`
 
 `@Redirect` kräver att du anropar målmetoden igen i handleren — om metoden inte är direkt åtkomlig i Yarn-Java uppstår kompilatorfel. `@ModifyArg` ändrar bara ett argument och låter Mixin sköta anropet. Välj `@ModifyArg` när du bara vill justera ett värde (t.ex. ett damage-float).
