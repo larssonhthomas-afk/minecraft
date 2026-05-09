@@ -7,5 +7,7 @@
   - [Deployment](Lifesteal-Deployment)
 - **Special Death Message**
   - [Översikt](Special-Death-Message)
+- **World Tweak Ancient**
+  - [Översikt](World-Tweak-Ancient)
 - **Infrastruktur**
   - [Discord-bot](Discord-Bot)

@@ -4,6 +4,16 @@ Alla noterbara ändringar i det här repot dokumenteras här.
 
 Format inspirerat av [Keep a Changelog](https://keepachangelog.com/). Datum är i ISO-format. Projektet har ännu ingen semantisk versionering — entries grupperas per dag.
 
+## 2026-05-09
+
+### Bugfix
+
+- **world_tweak_ancient v1.0.3** — `LootTableGlobalBanMixin` kraschade servern vid varje start sedan v1.0.0. `@Inject(method = "generateLoot")` matchade den void-overload som tar `(LootWorldContext, long, Consumer)` istället för `generateLoot(LootWorldContext)` → `ObjectArrayList<ItemStack>`. Fix: full metoddescriptor i annotationen. Se [World-Tweak-Ancient](World-Tweak-Ancient#v103-2026-05-09--bugfix-loottableglobalbanmixin-kraschade-servern-vid-start).
+
+### Dokumentation
+
+- **World Tweak Ancient** — ny wiki-sida med funktionsöversikt, arkitektur, testlista och bugghistorik.
+
 ## 2026-04-23 (infrastruktur & bot-omskrivning)
 
 ### Nytt
