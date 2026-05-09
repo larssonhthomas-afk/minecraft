@@ -321,7 +321,8 @@ Output EXACTLY one of these lines as the very last line:
 
     if status_line and status_line.startswith("SUCCESS:"):
         await progress("Tests passed — creating git checkpoint...")
-        git_msg = f"Checkpoint: {mod_id} created by {discord_user}"
+        created_version = _read_mod_version(mod_dir)
+        git_msg = f"Checkpoint: {mod_id}-{created_version}.jar created by {discord_user}"
         _out, git_err, git_rc = await _run_shell(
             f'git add -A && git commit -m "{git_msg}"',
             cwd=REPO_DIR,
@@ -721,6 +722,21 @@ async def _checkout_path(commit_hash: str, path: str) -> tuple[str, str, int]:
     )
 
 
+async def _resolve_version_to_hash(modname: str, version: str) -> str | None:
+    """Return the commit hash where modname was deployed at the given version.
+
+    Searches git log for checkpoint messages that contain both the mod name
+    and the version string (e.g. '1.0.1.jar').
+    """
+    stdout, _, rc = await _run_shell(
+        f'git log --format="%H %s" | grep -F "{modname}" | grep -F "{version}.jar" | head -1',
+        cwd=REPO_DIR,
+    )
+    if rc == 0 and stdout.strip():
+        return stdout.strip().split()[0]
+    return None
+
+
 async def _build_and_deploy_mod(mod_dir: Path) -> str:
     """Build a mod from source and deploy its jar. Returns status line."""
     build_out, build_err, build_rc = await _run_shell(
@@ -749,28 +765,47 @@ async def _sync_server_configs() -> None:
 
 async def restore_commit(commit_hash: str, target: str = "all") -> str:
     """
-    Restore to a specific commit.
+    Restore to a specific commit or version.
 
     target:
-      "all"      — full repo reset + rebuild all mods + sync configs + restart
+      "all"      — full repo restore + rebuild all mods + sync configs + restart
       "server"   — restore only server/ configs + restart
       <modname>  — restore only that mod's source + rebuild + restart
-    """
-    if not re.fullmatch(r"[0-9a-fA-F]{4,40}", commit_hash):
-        return f"Ogiltigt commit-hash: `{commit_hash}`"
 
-    # Always checkpoint current state first
+    commit_hash may be a hex hash (e.g. "80e5c14") or a version string
+    (e.g. "1.0.1") — version strings are only supported for named mod targets.
+    Every restore creates a new commit so history is never rewritten.
+    """
+    # Version string (x.y.z) → resolve to actual commit hash via git log
+    if re.fullmatch(r"\d+\.\d+\.\d+", commit_hash):
+        if target == "all":
+            return "Version-syntax (`x.y.z`) stöds bara för specifika mods — inte för `!restore all`."
+        resolved = await _resolve_version_to_hash(target, commit_hash)
+        if resolved is None:
+            return f"Ingen commit hittades för `{target}` version `{commit_hash}`."
+        commit_hash = resolved
+
+    if not re.fullmatch(r"[0-9a-fA-F]{4,40}", commit_hash):
+        return f"Ogiltigt commit-hash eller version: `{commit_hash}`"
+
+    # Checkpoint current state — always a new commit, history is never lost
     await _run_shell(
         f'git add -A && git commit -m "Checkpoint: before restore {target} to {commit_hash}" --allow-empty',
         cwd=REPO_DIR,
     )
 
     if target == "all":
-        stdout, stderr, rc = await _run_shell(
-            f"git reset --hard {commit_hash}", cwd=REPO_DIR
+        # Restore files via checkout, then commit — avoids git reset --hard
+        # which would orphan the checkpoint commit above.
+        _, stderr, rc = await _run_shell(
+            f"git checkout {commit_hash} -- .", cwd=REPO_DIR
         )
         if rc != 0:
             return f"Restore misslyckades:\n```\n{stderr[:500]}\n```"
+        await _run_shell(
+            f'git add -A && git commit -m "Restore: all to {commit_hash}" --allow-empty',
+            cwd=REPO_DIR,
+        )
         results = []
         for mod_dir in sorted(Path(MODS_SOURCE_DIR).iterdir()):
             if mod_dir.is_dir() and mod_dir.name != "external" and (mod_dir / "build.gradle").exists():
@@ -787,6 +822,10 @@ async def restore_commit(commit_hash: str, target: str = "all") -> str:
         _, stderr, rc = await _checkout_path(commit_hash, "server/")
         if rc != 0:
             return f"Restore server misslyckades:\n```\n{stderr[:400]}\n```"
+        await _run_shell(
+            f'git add -A && git commit -m "Restore: server to {commit_hash}" --allow-empty',
+            cwd=REPO_DIR,
+        )
         await _sync_server_configs()
         await _run_shell("sudo systemctl restart minecraft")
         return (
@@ -802,6 +841,10 @@ async def restore_commit(commit_hash: str, target: str = "all") -> str:
         _, stderr, rc = await _checkout_path(commit_hash, f"mods/{mod_dir.name}/")
         if rc != 0:
             return f"Restore av `{mod_dir.name}` misslyckades:\n```\n{stderr[:400]}\n```"
+        await _run_shell(
+            f'git add -A && git commit -m "Restore: {mod_dir.name} to {commit_hash}" --allow-empty',
+            cwd=REPO_DIR,
+        )
         result = await _build_and_deploy_mod(mod_dir)
         await _run_shell("sudo systemctl restart minecraft")
         return (

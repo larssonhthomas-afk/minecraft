@@ -13,7 +13,7 @@ Discord-boten låter spelare skapa och hantera Minecraft-mods direkt via Discord
 | `!activate <modnamn>` | Aktiverar en inaktiverad mod |
 | `!restore <hash>` | Återställer allt (repo + mods + server-configs) till en Git-commit |
 | `!restore server <hash>` | Återställer bara server-configs till en Git-commit |
-| `!restore <modnamn> <hash>` | Återställer och bygger om en specifik mod från en Git-commit |
+| `!restore <modnamn> <hash>` | Återställer och bygger om en specifik mod — hash eller version (t.ex. `1.0.1`) |
 | `!history` | Visar de 10 senaste Git-commits med hash |
 | `!server` | Visar serverstatus: online/offline, RAM, disk, uptime, spelare, mods |
 | `!restart` | Startar om Minecraft-servern och väntar tills den svarar |
@@ -29,7 +29,7 @@ Discord-boten låter spelare skapa och hantera Minecraft-mods direkt via Discord
 5. **Bygge** — Claude genererar Java-kod baserat på lifesteal-arkitekturen.
 6. **Test** — `./gradlew test` körs alltid. Aldrig deploy om tester misslyckas.
 7. **Fixa** — Vid testfel rättar Claude och försöker igen, max 5 gånger.
-8. **Checkpoint** — Git-commit: `"Checkpoint: <modnamn> created by <discord-användare>"`.
+8. **Checkpoint** — Git-commit: `"Checkpoint: <modnamn>-<version>.jar created by <discord-användare>"`.
 9. **Deploy** — Jar kopieras till serverns `mods/`-mapp. Servern behöver startas om.
 
 ## Hur !change fungerar
@@ -41,12 +41,15 @@ Samma flöde som `!create` men hittar modens befintliga källkod och modifierar 
 `!restore` har tre lägen beroende på argument:
 
 ```
-!restore abc1234          # Återställer allt: repo + alla mods + server-configs + omstart
-!restore server abc1234   # Återställer bara server-configs (server.properties, ops, whitelist, eula)
-!restore lifesteal abc1234 # Återställer bara en mod, bygger om och deployer
+!restore abc1234              # Återställer allt: repo + alla mods + server-configs + omstart
+!restore server abc1234       # Återställer bara server-configs (server.properties, ops, whitelist, eula)
+!restore lifesteal abc1234    # Återställer en specifik mod via commit-hash
+!restore lifesteal 1.0.1      # Återställer en specifik mod via versionsnummer
 ```
 
-Skapar alltid en checkpoint-commit av nuläget *innan* återställning.
+Version-syntax (`x.y.z`) söker automatiskt upp rätt commit-hash i git-loggen. Fungerar bara för namngivna mods — inte för `!restore all`.
+
+Varje återställning skapar **två nya commits**: en checkpoint av nuläget och en restore-commit med den återställda koden. Historiken skrivs aldrig om.
 
 ## Säkerhet
 

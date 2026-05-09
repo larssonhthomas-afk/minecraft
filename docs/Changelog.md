@@ -4,6 +4,18 @@ Alla noterbara ändringar i det här repot dokumenteras här.
 
 Format inspirerat av [Keep a Changelog](https://keepachangelog.com/). Datum är i ISO-format. Projektet har ännu ingen semantisk versionering — entries grupperas per dag.
 
+## 2026-05-09 (restore-förbättringar & commit-integritet)
+
+### Nytt
+
+- **`!restore <modnamn> <version>`** — Versionsnummer (t.ex. `1.0.1`) accepteras som alternativ till commit-hash. Söker automatiskt i git-loggen efter rätt checkpoint-commit.
+
+### Fixat
+
+- **`!create` saknade version i commit-meddelandet** — Checkpoint-commitet hette `Checkpoint: <modnamn> created by ...` utan versionsnummer, vilket omöjliggjorde `!restore`-sökning på version. Nytt format: `Checkpoint: <modnamn>-1.0.0.jar created by ...`.
+- **`!restore all` förstörde sin egen checkpoint** — `git reset --hard` flyttade branch-pointern bakåt och lät checkpoint-commitet bli orphaned (osynligt i `git log`). Ersatt med `git checkout <hash> -- .` + ny commit — historiken skrivs aldrig om.
+- **`!restore server` och `!restore <modnamn>` skapade aldrig commit** — Filerna återställdes via `git checkout -- <path>` men ingen commit gjordes. Varje återställning skapar nu alltid ett `Restore:`-commit efter checkpoint.
+
 ## 2026-05-09
 
 ### Bugfix
