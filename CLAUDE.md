@@ -61,6 +61,7 @@ Dokumentation skrivs i `docs/` som vanliga `.md`-filer. GitHub Wiki speglas auto
 - Skapa aldrig filer utanför den mapp du är grundad i, utom när en specifik instruktion tillåter det (t.ex. dokumentation till `docs/`).
 - Kör alltid `./gradlew test` efter kodändringar. Commita inte röda tester.
 - **Wiki-regel:** När en ny komponent, mod eller infrastrukturändring läggs till ska motsvarande dokumentation skapas eller uppdateras i `docs/`. Committa alltid doc-filen i samma commit som koden.
+- **CLAUDE.md-regel:** När en ny Mixin-fallgrop, MC API-quirk eller process-regel upptäcks under utveckling ska den dokumenteras i `CLAUDE.md` (rätt sektion, eller ny sektion vid behov) i samma commit som bugfixen eller koden som triggade insikten.
 - **Issue-regel:** Stäng GitHub-issues med en kommentar (vilken commit/PR som löste det) när funktionalitet är klar och deployad. Öppna nya issues för buggar eller förbättringar som upptäcks under arbetet.
 
 ## Fabric Mixin — kända fallgropar (MC 1.21.4)
