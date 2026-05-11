@@ -25,6 +25,8 @@ public final class UnbrokenChainAbilityActions {
         store.revokeAbility(player.getUuid());
         AbilityStateManager.resetChain(player);
         saveQuiet(store);
+        broadcastServer(player,
+                Text.literal("\u00a76[UChain] \u00a7e" + player.getName().getString() + " \u00a77har f\u00f6rlorat Unbroken Chain-abilityn."));
     }
 
     /** If killer doesn't have the ability and victim does, transfer it. */

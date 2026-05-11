@@ -1,6 +1,7 @@
 package com.unbrokenchainability;
 
 import com.unbrokenchainability.integration.BookCreator;
+import com.unbrokenchainability.integration.RemoveAbilityCommand;
 import com.unbrokenchainability.integration.UnbrokenChainAbilityActions;
 import com.unbrokenchainability.logic.AbilityDataStore;
 import net.fabricmc.api.ModInitializer;
@@ -76,6 +77,7 @@ public final class UnbrokenChainAbilityMod implements ModInitializer {
             return ActionResult.SUCCESS;
         });
 
+        RemoveAbilityCommand.register();
         LOGGER.info("UnbrokenChainAbility initialized");
     }
 }
