@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "unbroken_chain_ability",
+  "version": "${version}",
+  "name": "Unbroken Chain Ability",
+  "description": "Permanent player ability: 3 consecutive sword hits activate +3% damage per hit (max +30%), chain breaks on damage or 7s timeout. Book crafted from Dragon Egg + Player Head.",
+  "authors": ["Thomas Larsson"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.unbrokenchainability.UnbrokenChainAbilityMod"]
+  },
+  "mixins": [
+    "unbroken_chain_ability.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

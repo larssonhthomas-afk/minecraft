@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "package": "com.unbrokenchainability.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AbstractCraftingAccessor",
+    "CraftingMixin",
+    "PlayerAttackMixin",
+    "PlayerDisplayNameMixin"
+  ],
+  "server": [
+    "PlayerDamageMixin",
+    "PlayerDeathMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
