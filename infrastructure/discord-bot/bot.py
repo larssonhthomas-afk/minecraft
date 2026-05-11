@@ -33,6 +33,8 @@ from claude_runner import (
     restore_commit,
     get_history,
     get_server_status,
+    stop_server,
+    start_server,
     restart_server,
     reset_health,
     reset_world,
@@ -77,6 +79,8 @@ HELP_TEXT = """\
 `!restore <modnamn> <hash|version>` — Återställ bara en specifik mod (hash eller t.ex. `1.0.1`).
 `!history` — Visa de 10 senaste Git-commits med hash.
 `!server` — Visa serverstatus, RAM, disk och aktiva spelare.
+`!stop` — Stoppa servern (världen sparas automatiskt).
+`!start` — Starta servern.
 `!restart` — Starta om Minecraft-servern.
 `!reset` — Återställ alla spelares HP till standard 20 HP (10 hjärtan).
 `!resetworld` — Radera världen helt (terräng + spelardata) och starta om med ny värld.
@@ -425,6 +429,26 @@ async def cmd_server(ctx: commands.Context):
     thread = await get_or_create_thread(ctx.message, "server status")
     try:
         await thread.send(await get_server_status())
+    except Exception as exc:
+        await thread.send(f"Error: {exc}")
+
+
+@bot.command(name="stop")
+async def cmd_stop(ctx: commands.Context):
+    thread = await get_or_create_thread(ctx.message, "server stop")
+    await thread.send("Stoppar servern — världen sparas automatiskt...")
+    try:
+        await thread.send(await stop_server())
+    except Exception as exc:
+        await thread.send(f"Error: {exc}")
+
+
+@bot.command(name="start")
+async def cmd_start(ctx: commands.Context):
+    thread = await get_or_create_thread(ctx.message, "server start")
+    await thread.send("Startar servern...")
+    try:
+        await thread.send(await start_server())
     except Exception as exc:
         await thread.send(f"Error: {exc}")
 

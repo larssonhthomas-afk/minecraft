@@ -938,6 +938,35 @@ async def get_server_status() -> str:
 # !restart
 # ---------------------------------------------------------------------------
 
+async def stop_server() -> str:
+    """Gracefully stop the Minecraft server (world is saved automatically on SIGTERM)."""
+    _, stderr, rc = await _run_shell("sudo systemctl stop minecraft", timeout=60)
+    if rc != 0:
+        return f"❌ Kunde inte stoppa servern:\n```\n{stderr[:400]}\n```"
+    return "🔴 **Servern är stoppad.** Världen sparades automatiskt. Starta igen med `!start`."
+
+
+async def start_server() -> str:
+    """Start the Minecraft server and wait until port 25565 is up."""
+    import socket as _socket
+
+    await _run_shell("sudo systemctl reset-failed minecraft")
+    _, stderr, rc = await _run_shell("sudo systemctl start minecraft", timeout=30)
+    if rc != 0:
+        return f"❌ Kunde inte starta servern:\n```\n{stderr[:400]}\n```"
+
+    for _ in range(45):
+        await asyncio.sleep(2)
+        s = _socket.socket()
+        s.settimeout(1)
+        up = s.connect_ex(("localhost", 25565)) == 0
+        s.close()
+        if up:
+            return "🟢 **Servern är uppe!** Anslut nu."
+
+    return "⚠️ Start skickad men servern svarar inte på port 25565 efter 90 s — kolla `journalctl -u minecraft -f`."
+
+
 async def restart_server() -> str:
     """Restart the Minecraft server via systemctl, wait until port 25565 is up."""
     import socket as _socket
