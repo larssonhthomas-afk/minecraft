@@ -19,6 +19,7 @@ Uppdatera denna lista varje gång en mod skapas eller ändras.
 - **admin_tool_operatorer** — `mods/admin_tool_operatorer/` — admin-kommandon: /check inv/enderchest/bag, /rank set, /give customitem
 - **admin_tool_check** — `mods/admin_tool_check/` — op-verktyg för att inspektera spelares inventory/enderchest/bag live
 - **gold_guld_spawn** — `mods/gold_guld_spawn/` — 1.5× guld ore spawn i overworld (+2/chunk) och nether (+10/chunk) via Fabric BiomeModifications
+- **axe_cleaving_cleaving** — `mods/axe_cleaving_cleaving/` — Cleaving-förmåga på yxor: /give customitem Cleaving ger bok, högerklick applicerar på yxa i andra handen; shield-disable → +3 HP (1.5 hjärtan) extra skada; Cleaving-yxa blockad från chest/trapped chest/shulker box
 
 ## Struktur
 

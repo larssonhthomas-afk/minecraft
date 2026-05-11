@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.axecleavingcleaving.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "server": [
+    "ShieldDisableMixin",
+    "ContainerBlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "axe_cleaving_cleaving",
+  "version": "${version}",
+  "name": "Axe Cleaving",
+  "description": "Cleaving-förmåga på yxor: extra 1.5 hjärtan vid shield-disable. /give customitem Cleaving.",
+  "authors": [],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.axecleavingcleaving.AxeCleavingCleavingMod"]
+  },
+  "mixins": [
+    "axe_cleaving_cleaving.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}
