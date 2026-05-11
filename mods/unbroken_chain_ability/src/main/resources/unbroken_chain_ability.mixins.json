@@ -6,7 +6,9 @@
     "AbstractCraftingAccessor",
     "CraftingMixin",
     "PlayerAttackMixin",
-    "PlayerDisplayNameMixin"
+    "PlayerDisplayNameMixin",
+    "PlayerListNameMixin",
+    "ServerPlayerDisplayNameMixin"
   ],
   "server": [
     "PlayerDamageMixin",

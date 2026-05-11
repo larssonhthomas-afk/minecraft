@@ -2,6 +2,8 @@ package com.unbrokenchainability.integration;
 
 import com.unbrokenchainability.UnbrokenChainAbilityMod;
 import com.unbrokenchainability.logic.AbilityDataStore;
+import java.util.List;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -17,6 +19,7 @@ public final class UnbrokenChainAbilityActions {
         saveQuiet(store);
         broadcastServer(player,
                 Text.literal("§6[UChain] §e" + player.getName().getString() + " §7har fått Unbroken Chain-abilityn!"));
+        refreshTabEntry(player);
     }
 
     public static void revokeAbility(ServerPlayerEntity player) {
@@ -27,6 +30,7 @@ public final class UnbrokenChainAbilityActions {
         saveQuiet(store);
         broadcastServer(player,
                 Text.literal("\u00a76[UChain] \u00a7e" + player.getName().getString() + " \u00a77har f\u00f6rlorat Unbroken Chain-abilityn."));
+        refreshTabEntry(player);
     }
 
     /** If killer doesn't have the ability and victim does, transfer it. */
@@ -46,12 +50,22 @@ public final class UnbrokenChainAbilityActions {
                     Text.literal("§6[UChain] §e" + killer.getName().getString()
                             + " §7tog Unbroken Chain-abilityn från §e"
                             + victim.getName().getString() + "§7!"));
+            refreshTabEntry(victim);
+            refreshTabEntry(killer);
         }
     }
 
     private static void broadcastServer(ServerPlayerEntity any, Text msg) {
         MinecraftServer server = any.getServer();
         if (server != null) server.getPlayerManager().broadcast(msg, false);
+    }
+
+    private static void refreshTabEntry(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        server.getPlayerManager().sendToAll(
+                PlayerListS2CPacket.entryFromPlayer(List.of(player))
+        );
     }
 
     private static void saveQuiet(AbilityDataStore store) {
