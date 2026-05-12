@@ -14,6 +14,7 @@ class BastionLootBanListTest {
         BastionLootBanList list = BastionLootBanList.defaults();
         assertTrue(list.isBanned("minecraft:ancient_debris"));
         assertTrue(list.isBanned("minecraft:netherite_ingot"));
+        assertTrue(list.isBanned("minecraft:netherite_scrap"));
     }
 
     @Test
@@ -21,7 +22,6 @@ class BastionLootBanListTest {
         BastionLootBanList list = BastionLootBanList.defaults();
         assertFalse(list.isBanned("minecraft:diamond"));
         assertFalse(list.isBanned("minecraft:gold_ingot"));
-        assertFalse(list.isBanned("minecraft:netherite_scrap"));
         assertFalse(list.isBanned("minecraft:gold_block"));
     }
 
@@ -82,6 +82,7 @@ class BastionLootBanListTest {
     void constantsAreCorrect() {
         assertEquals("minecraft:ancient_debris", BastionLootBanList.ANCIENT_DEBRIS);
         assertEquals("minecraft:netherite_ingot", BastionLootBanList.NETHERITE_INGOT);
+        assertEquals("minecraft:netherite_scrap", BastionLootBanList.NETHERITE_SCRAP);
     }
 
     @Test

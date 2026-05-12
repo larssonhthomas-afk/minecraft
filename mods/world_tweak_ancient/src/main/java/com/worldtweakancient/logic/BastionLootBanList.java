@@ -12,6 +12,7 @@ public final class BastionLootBanList {
 
     public static final String ANCIENT_DEBRIS = "minecraft:ancient_debris";
     public static final String NETHERITE_INGOT = "minecraft:netherite_ingot";
+    public static final String NETHERITE_SCRAP = "minecraft:netherite_scrap";
 
     private final Set<String> banned;
 
@@ -31,6 +32,7 @@ public final class BastionLootBanList {
         Set<String> set = new HashSet<>();
         set.add(ANCIENT_DEBRIS);
         set.add(NETHERITE_INGOT);
+        set.add(NETHERITE_SCRAP);
         return new BastionLootBanList(set);
     }
 
