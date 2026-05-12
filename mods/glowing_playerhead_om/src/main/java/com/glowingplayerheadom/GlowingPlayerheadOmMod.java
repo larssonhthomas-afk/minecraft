@@ -9,9 +9,9 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.component.DataComponentTypes;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.data.DataTracker;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
 import net.minecraft.item.Items;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -119,17 +120,18 @@ public class GlowingPlayerheadOmMod implements ModInitializer {
                     continue;
                 }
 
-                int remainingTicks = (int) (session.remainingMs(now) / 50);
                 Set<UUID> nowInRange = new HashSet<>();
 
                 for (ServerPlayerEntity target : server.getPlayerManager().getPlayerList()) {
+                    if (target.getUuid().equals(activatorId)) continue;
                     if (!target.getWorld().getRegistryKey().equals(activator.getWorld().getRegistryKey())) continue;
                     if (session.isWithinRadius(
                             activator.getX(), activator.getY(), activator.getZ(),
                             target.getX(), target.getY(), target.getZ())) {
                         nowInRange.add(target.getUuid());
-                        target.addStatusEffect(new StatusEffectInstance(
-                                StatusEffects.GLOWING, remainingTicks, 0, false, false, true));
+                        if (!session.affectedPlayerIds.contains(target.getUuid())) {
+                            sendGlowPacket(activator, target, true);
+                        }
                     }
                 }
 
@@ -138,7 +140,7 @@ public class GlowingPlayerheadOmMod implements ModInitializer {
                 for (UUID pid : leftRange) {
                     ServerPlayerEntity target = server.getPlayerManager().getPlayer(pid);
                     if (target != null) {
-                        target.removeStatusEffect(StatusEffects.GLOWING);
+                        sendGlowPacket(activator, target, false);
                     }
                 }
 
@@ -176,15 +178,14 @@ public class GlowingPlayerheadOmMod implements ModInitializer {
         long now = System.currentTimeMillis();
         cleanupSession(playerId, server);
         GlowingSession session = logic.createSession(playerId, now);
-        int remainingTicks = (int) (GlowingSession.DURATION_MS / 50);
 
         for (ServerPlayerEntity target : server.getPlayerManager().getPlayerList()) {
+            if (target.getUuid().equals(playerId)) continue;
             if (!target.getWorld().getRegistryKey().equals(player.getWorld().getRegistryKey())) continue;
             if (session.isWithinRadius(
                     player.getX(), player.getY(), player.getZ(),
                     target.getX(), target.getY(), target.getZ())) {
-                target.addStatusEffect(new StatusEffectInstance(
-                        StatusEffects.GLOWING, remainingTicks, 0, false, false, true));
+                sendGlowPacket(player, target, true);
                 session.affectedPlayerIds.add(target.getUuid());
             }
         }
@@ -202,13 +203,28 @@ public class GlowingPlayerheadOmMod implements ModInitializer {
     private void cleanupSession(UUID activatorId, MinecraftServer server) {
         GlowingSession session = logic.getSession(activatorId);
         if (session == null) return;
-        for (UUID pid : session.affectedPlayerIds) {
-            ServerPlayerEntity target = server.getPlayerManager().getPlayer(pid);
-            if (target != null) {
-                target.removeStatusEffect(StatusEffects.GLOWING);
+        ServerPlayerEntity activator = server.getPlayerManager().getPlayer(activatorId);
+        if (activator != null) {
+            for (UUID pid : session.affectedPlayerIds) {
+                ServerPlayerEntity target = server.getPlayerManager().getPlayer(pid);
+                if (target != null) {
+                    sendGlowPacket(activator, target, false);
+                }
             }
         }
         logic.removeSession(activatorId);
+    }
+
+    private static void sendGlowPacket(ServerPlayerEntity activator, ServerPlayerEntity target, boolean glowing) {
+        byte currentFlags = target.getDataTracker().get(EntityFlagsHelper.FLAGS_KEY);
+        byte newFlags = glowing
+                ? (byte) (currentFlags | 0x40)
+                : (byte) (currentFlags & ~0x40);
+        EntityTrackerUpdateS2CPacket packet = new EntityTrackerUpdateS2CPacket(
+                target.getId(),
+                List.of((DataTracker.SerializedEntry<?>) DataTracker.SerializedEntry.of(EntityFlagsHelper.FLAGS_KEY, newFlags))
+        );
+        activator.networkHandler.sendPacket(packet);
     }
 
     private void sendConfirmationMessage(ServerPlayerEntity player) {
