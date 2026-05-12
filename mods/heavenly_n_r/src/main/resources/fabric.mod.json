@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "heavenly_n_r",
+  "version": "${version}",
+  "name": "Heavenly",
+  "description": "Permanent player ability: absorbs one fatal hit (totem effect, 40% helmet durability loss), 20-minute cooldown. Book via /give customitem heavenly; PvP kill transfers the ability.",
+  "authors": ["Thomas Larsson"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.heavenlynr.HeavenlyNRMod"]
+  },
+  "mixins": [
+    "heavenly_n_r.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}

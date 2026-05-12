@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.heavenlynr.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "PlayerDisplayNameMixin",
+    "PlayerListNameMixin"
+  ],
+  "server": [
+    "PlayerDeathMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
