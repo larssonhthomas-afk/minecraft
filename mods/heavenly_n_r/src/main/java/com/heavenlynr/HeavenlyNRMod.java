@@ -76,6 +76,7 @@ public final class HeavenlyNRMod implements ModInitializer {
             try {
                 dataStore = HeavenlyDataStore.loadOrCreate(dataPath);
                 LOGGER.info("HeavenlyNR data loaded from {}", dataPath);
+                broadcastHolderSync();
             } catch (Exception e) {
                 LOGGER.error("Failed to load Heavenly data", e);
             }
