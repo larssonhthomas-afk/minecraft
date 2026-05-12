@@ -74,6 +74,10 @@ public final class HeavenlyNRMod implements ModInitializer {
             } catch (Exception e) {
                 LOGGER.error("Failed to load Heavenly data", e);
             }
+            HeavenlyTeamManager.init(srv);
+            if (dataStore != null) {
+                HeavenlyTeamManager.syncAll(srv, dataStore.getAllHolders());
+            }
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(srv -> {
@@ -89,6 +93,9 @@ public final class HeavenlyNRMod implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> {
             if (dataStore != null) {
                 dataStore.setPlayerName(handler.player.getUuid(), handler.player.getName().getString());
+                if (dataStore.hasAbility(handler.player.getUuid())) {
+                    HeavenlyTeamManager.addPlayer(srv, handler.player);
+                }
             }
         });
     }
@@ -226,6 +233,7 @@ public final class HeavenlyNRMod implements ModInitializer {
         if (server != null) {
             server.getPlayerManager().broadcast(
                     Text.literal("§6[Heavenly] §e" + player.getName().getString() + " §7har fått Heavenly-förmågan!"), false);
+            HeavenlyTeamManager.addPlayer(server, player);
         }
         refreshTabEntry(player);
     }
@@ -237,6 +245,7 @@ public final class HeavenlyNRMod implements ModInitializer {
         if (server != null) {
             server.getPlayerManager().broadcast(
                     Text.literal("§6[Heavenly] §e" + player.getName().getString() + " §7har förlorat Heavenly-förmågan."), false);
+            HeavenlyTeamManager.removePlayer(server, player);
         }
         refreshTabEntry(player);
     }
@@ -250,6 +259,8 @@ public final class HeavenlyNRMod implements ModInitializer {
             server.getPlayerManager().broadcast(
                     Text.literal("§6[Heavenly] §e" + killer.getName().getString()
                             + " §7tog Heavenly-förmågan från §e" + victim.getName().getString() + "§7!"), false);
+            HeavenlyTeamManager.removePlayer(server, victim);
+            HeavenlyTeamManager.addPlayer(server, killer);
         }
         refreshTabEntry(victim);
         refreshTabEntry(killer);
