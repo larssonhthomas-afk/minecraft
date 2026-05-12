@@ -22,6 +22,7 @@ Uppdatera denna lista varje gång en mod skapas eller ändras.
 - **gold_guld_spawn** — `mods/gold_guld_spawn/` — 1.5× guld ore spawn i overworld (+2/chunk) och nether (+10/chunk) via Fabric BiomeModifications
 - **axe_cleaving_cleaving** — `mods/axe_cleaving_cleaving/` — Cleaving-förmåga på yxor: /give customitem Cleaving ger bok, högerklick applicerar på yxa i andra handen; shield-disable → +3 HP (1.5 hjärtan) extra skada; Cleaving-yxa blockad från chest/trapped chest/shulker box
 - **heavenly_n_r** — `mods/heavenly_n_r/` — permanent spellarability (Heavenly): /give customitem heavenly ger bok, högerklick applicerar; absorberar ett dödligt slag (totem-effekt, 40% hjälm-durability-förlust), 20 min cooldown i ActionBar; PvP kill-transfer; /give customitem heavenly remove <spelare> tar bort förmågan; "Heavenly" i guldtext i tab, chat och namnlapp
+- **glowing_playerhead_om** — `mods/glowing_playerhead_om/` — högerklicka med spelarhuvud (med PlayerProfile-data) → bekräftelsemeny [Ja]/[Nej] i chatten; Ja konsumerar huvudet och ger Glowing (10 min) till alla spelare inom 50 block från aktiveraren i samma dimension; radien rör sig med aktiveraren, effekten tas bort direkt om spelaren lämnar 50-block-radien; sessionen rensas om aktiveraren loggar ut
 
 ## Struktur
 
@@ -125,6 +126,17 @@ jar xf "$MCJAR" net/minecraft/loot/LootTable.class && javap -p LootTable.class |
 ```
 
 Verkligt fall: `LootTableGlobalBanMixin` i `world_tweak_ancient` v1.0.0–1.0.2 matchade `generateLoot(LootWorldContext, long, Consumer)` (void) istället för `generateLoot(LootWorldContext)` → `ObjectArrayList`. Servern kraschade vid varje start tills descriptorn sattes explicit i v1.0.3.
+
+### `UseItemCallback` returnerar `ActionResult` i 1.21.4 (inte `TypedActionResult`)
+
+I MC 1.21.4 returnerar `UseItemCallback.EVENT` `ActionResult` — **inte** `TypedActionResult<ItemStack>`. `TypedActionResult` har tagits bort ur `net.minecraft.util`. Använd `ActionResult.PASS`, `ActionResult.SUCCESS` och `ActionResult.FAIL` direkt.
+
+```java
+UseItemCallback.EVENT.register((player, world, hand) -> {
+    // ...
+    return ActionResult.SUCCESS; // eller ActionResult.PASS
+});
+```
 
 ### Föredra `@ModifyArg` framför `@Redirect`
 

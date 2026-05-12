@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "glowing_playerhead_om",
+  "version": "${version}",
+  "name": "GlowingPlayerheadOm",
+  "description": "Högerklicka med ett spelarhuvud för att ge Glowing till alla spelare inom 50 block i 10 minuter.",
+  "authors": ["GlowingPlayerheadOm Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.glowingplayerheadom.GlowingPlayerheadOmMod"]
+  },
+  "mixins": [
+    "glowing_playerhead_om.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}
