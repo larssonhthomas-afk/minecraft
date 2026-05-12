@@ -29,7 +29,11 @@ import net.minecraft.util.WorldSavePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,6 +54,7 @@ public final class HeavenlyNRMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PayloadTypeRegistry.playS2C().register(HeavenlyHolderSyncPacket.ID, HeavenlyHolderSyncPacket.CODEC);
         PlayerSuffixRegistry.register(uuid -> {
             HeavenlyDataStore store = dataStore;
             if (store == null || !store.hasAbility(uuid)) return null;
@@ -74,10 +79,7 @@ public final class HeavenlyNRMod implements ModInitializer {
             } catch (Exception e) {
                 LOGGER.error("Failed to load Heavenly data", e);
             }
-            HeavenlyTeamManager.init(srv);
-            if (dataStore != null) {
-                HeavenlyTeamManager.syncAll(srv, dataStore.getAllHolders());
-            }
+
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(srv -> {
@@ -93,9 +95,8 @@ public final class HeavenlyNRMod implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> {
             if (dataStore != null) {
                 dataStore.setPlayerName(handler.player.getUuid(), handler.player.getName().getString());
-                if (dataStore.hasAbility(handler.player.getUuid())) {
-                    HeavenlyTeamManager.addPlayer(srv, handler.player);
-                }
+                ServerPlayNetworking.send(handler.player, new HeavenlyHolderSyncPacket(
+                        new ArrayList<>(dataStore.getAllHolders())));
             }
         });
     }
@@ -233,7 +234,7 @@ public final class HeavenlyNRMod implements ModInitializer {
         if (server != null) {
             server.getPlayerManager().broadcast(
                     Text.literal("§6[Heavenly] §e" + player.getName().getString() + " §7har fått Heavenly-förmågan!"), false);
-            HeavenlyTeamManager.addPlayer(server, player);
+            broadcastHolderSync();
         }
         refreshTabEntry(player);
     }
@@ -245,7 +246,7 @@ public final class HeavenlyNRMod implements ModInitializer {
         if (server != null) {
             server.getPlayerManager().broadcast(
                     Text.literal("§6[Heavenly] §e" + player.getName().getString() + " §7har förlorat Heavenly-förmågan."), false);
-            HeavenlyTeamManager.removePlayer(server, player);
+            broadcastHolderSync();
         }
         refreshTabEntry(player);
     }
@@ -259,11 +260,19 @@ public final class HeavenlyNRMod implements ModInitializer {
             server.getPlayerManager().broadcast(
                     Text.literal("§6[Heavenly] §e" + killer.getName().getString()
                             + " §7tog Heavenly-förmågan från §e" + victim.getName().getString() + "§7!"), false);
-            HeavenlyTeamManager.removePlayer(server, victim);
-            HeavenlyTeamManager.addPlayer(server, killer);
+            broadcastHolderSync();
         }
         refreshTabEntry(victim);
         refreshTabEntry(killer);
+    }
+
+    private static void broadcastHolderSync() {
+        if (dataStore == null || server == null) return;
+        HeavenlyHolderSyncPacket packet = new HeavenlyHolderSyncPacket(
+                new ArrayList<>(dataStore.getAllHolders()));
+        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+            ServerPlayNetworking.send(p, packet);
+        }
     }
 
     private static void refreshTabEntry(ServerPlayerEntity player) {

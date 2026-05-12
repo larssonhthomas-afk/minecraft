@@ -6,7 +6,7 @@
   "description": "Permanent player ability: absorbs one fatal hit (totem effect, 40% helmet durability loss), 20-minute cooldown. Book via /give customitem heavenly; PvP kill transfers the ability.",
   "authors": ["Thomas Larsson"],
   "license": "MIT",
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
     "main": ["com.heavenlynr.HeavenlyNRMod"]
   },
