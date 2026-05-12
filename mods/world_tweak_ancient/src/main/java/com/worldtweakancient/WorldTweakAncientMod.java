@@ -1,6 +1,7 @@
 package com.worldtweakancient;
 
 import com.worldtweakancient.logic.AncientDebrisRarity;
+import com.worldtweakancient.logic.EnchantmentBanList;
 import com.worldtweakancient.logic.GlobalLootBanList;
 import com.worldtweakancient.logic.DrownedEquipmentRules;
 import com.worldtweakancient.logic.EntitySpawnBlockList;
@@ -19,6 +20,7 @@ public final class WorldTweakAncientMod implements ModInitializer {
     private static final NetherWorldGenBlockBanList BLOCK_BAN_LIST = NetherWorldGenBlockBanList.defaults();
     private static final DrownedEquipmentRules DROWNED_RULES = DrownedEquipmentRules.defaults();
     private static final AncientDebrisRarity DEBRIS_RARITY = AncientDebrisRarity.defaults();
+    private static final EnchantmentBanList ENCHANTMENT_BAN_LIST = EnchantmentBanList.defaults();
 
     public static GlobalLootBanList globalLootBanList() {
         return GLOBAL_LOOT_BAN_LIST;
@@ -40,6 +42,10 @@ public final class WorldTweakAncientMod implements ModInitializer {
         return DEBRIS_RARITY;
     }
 
+    public static EnchantmentBanList enchantmentBanList() {
+        return ENCHANTMENT_BAN_LIST;
+    }
+
     @Override
     public void onInitialize() {
         LOGGER.info("WorldTweakAncient initierad:");
@@ -48,5 +54,6 @@ public final class WorldTweakAncientMod implements ModInitializer {
         LOGGER.info("  Nether worldgen block ban: {} (mixin)", BLOCK_BAN_LIST.banned());
         LOGGER.info("  Spawn block list: {} (mixin)", SPAWN_BLOCK_LIST.blocked());
         LOGGER.info("  Drowned trident allowed: {} (mixin)", DROWNED_RULES.isTridentAllowed());
+        LOGGER.info("  Enchantment ban list: {} (mixin)", ENCHANTMENT_BAN_LIST.banned());
     }
 }

@@ -6,7 +6,9 @@
   "server": [
     "ChunkRegionGoldBlockMixin",
     "DrownedEntityMixin",
+    "EnchantmentTableBanMixin",
     "ServerWorldSpawnEntityMixin",
+    "VillagerEnchantBookTradeMixin",
     "LootTableGlobalBanMixin"
   ],
   "injectors": {
