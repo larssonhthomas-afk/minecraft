@@ -50,6 +50,12 @@ public final class HeavenlyNRMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PlayerSuffixRegistry.register(uuid -> {
+            HeavenlyDataStore store = dataStore;
+            if (store == null || !store.hasAbility(uuid)) return null;
+            return Text.literal(HeavenlyLogic.DISPLAY_SUFFIX)
+                    .styled(s -> s.withColor(Formatting.GOLD).withBold(false).withItalic(false));
+        });
         registerLifecycleEvents();
         registerDeathEvent();
         registerItemUse();
