@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.combattweakcombat.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "server": [
+    "CooldownOverrideMixin",
+    "MaceDamageMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

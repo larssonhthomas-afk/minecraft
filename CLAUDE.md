@@ -11,6 +11,7 @@ Uppdatera denna lista varje gång en mod skapas eller ändras.
 - **combat_enchant_custom** — `mods/combat_enchant_custom/` — Unbroken Chain-svärdenchantment: +3% skada per träff efter 3 i rad (max +30%), kedjebrott vid skada (**ersatt av unbroken_chain_ability**)
 - **unbroken_chain_ability** — `mods/unbroken_chain_ability/` — permanent spellarability (Unbroken Chain): craftad bok (Dragon Egg slot 2 + Player Head slot 5), högerklick applicerar; 3 svärdslag mot samma mål → +3%/slag (max +30%), kedjeljud, bryts vid skada/7s timeout, PvP kill-transfer, tab-display
 - **combat_tweak_pearl** — `mods/combat_tweak_pearl/` — 15s cooldown på ender pearl och wind charge; mace-skada nerfad -40% med max 14 HP (7 hjärtan) per slag
+- **combat_tweak_combat** — `mods/combat_tweak_combat/` — 15s cooldown på ender pearl och wind charge; mace-skada nerfad -40% med max 14 HP (7 hjärtan) per slag (separat mod, identisk funktionalitet)
 - **armor_enchant_tre** — `mods/armor_enchant_tre/` — rustningsenchantment (tre)
 - **drop_n_r** — `mods/drop_n_r/` — drop & respawn-tweak
 - **world_tweak_ancient** — `mods/world_tweak_ancient/` — världstweak för ancient mechanics

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "combat_tweak_combat",
+  "version": "${version}",
+  "name": "CombatTweakCombat",
+  "description": "15s cooldown on ender pearl and wind charge; mace damage nerfed -40% with max 14 HP per hit.",
+  "authors": ["CombatTweakCombat Team"],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["com.combattweakcombat.CombatTweakCombatMod"]
+  },
+  "mixins": [
+    "combat_tweak_combat.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4",
+    "java": ">=21"
+  }
+}
